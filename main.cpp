@@ -52,7 +52,12 @@ int main() {
 
 	while(!glfwWindowShouldClose(window)){
 
+		//Compute Player Movement && Update pellets
+		//Run ghost AI
 
+		//Draw walls
+		//Draw pellets
+		//Draw ghost(s)
 
 		glfwSwapBuffers(window);
 		glfwPollEvents();
@@ -60,6 +65,7 @@ int main() {
 	}
 
 	//Termination of Stuff 
+	//cleanVAO(); on all vaos
 	glfwTerminate();
 }
 
