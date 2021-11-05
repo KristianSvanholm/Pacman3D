@@ -40,9 +40,8 @@ int main() {
 
 	//initializeShader();
 
-	//Gluint Walls = createWallVao(); -> This should call createSquare();
-	
-	//Create pacman TODO: Change out for sprite rendering
+	//Gluint walls = createWallVao(); -> This should call createSquare();
+	//Gluint pellets = createPelletVao(); -> This should call createSphere();
 
 	//Create Pacman & Ghost vaos
 	//GLuint pacman = CreatePacman(); -> This should only be a walking camera. figure out
