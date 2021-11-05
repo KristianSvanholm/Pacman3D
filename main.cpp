@@ -55,6 +55,7 @@ int main() {
 		//Compute Player Movement && Update pellets
 		//Run ghost AI
 
+		//TODO: Create draw function
 		//Draw walls
 		//Draw pellets
 		//Draw ghost(s)
