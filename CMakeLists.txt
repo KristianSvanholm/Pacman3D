@@ -8,5 +8,5 @@ add_subdirectory(glad)
 add_subdirectory(glfw)
 add_subdirectory(glm)
 
-add_executable(PacMan3D  "main.cpp")
+add_executable(PacMan3D  "main.cpp" "learnopengl/shader_m.h" "learnopengl/filesystem.h" "stb_image.h" "root_directory.h")
 target_link_libraries(PacMan3D glfw glad OpenGL::GL ${CMAKE_DL_LIBS})
