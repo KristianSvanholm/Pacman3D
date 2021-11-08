@@ -24,26 +24,28 @@ using namespace std;
 
 //Methods
 vector<glm::vec3> readLevel(string path);
+unsigned int initializeTexture(string path);
 GLuint wallSegment();
-int initialize();
-void initializeShader();
 void mouse_callback(GLFWwindow* window, double xpos, double ypos);
 void processInput(GLFWwindow* window);
-unsigned int initializeTexture(string path);
+void initializeShader();
+int initialize();
+//------
 
 //Game variables
 vector<glm::vec3> level;
+float deltaTime = 0.0f;	// Time between current frame and last frame
+float lastFrame = 0.0f; // Time of last frame
+//-------------
 
 //Screen
 const float WIDTH = 1000;
 const float HEIGHT = 800;
 const float ASPECT = WIDTH / HEIGHT;   // desired aspect ratio
-
 GLFWwindow* window;
+//-----
 
-float angle = 0;
-float frem = 0;
-
+//Camera variables
 glm::vec3 cameraPos = glm::vec3(17.0f, 0.0f, 28.0f);
 glm::vec3 cameraFront = glm::vec3(0.0f, 0.0f, -1.0f);
 glm::vec3 cameraUp = glm::vec3(0.0f, 1.0f, 0.0f);
@@ -51,9 +53,7 @@ float yaw = -90.0f;
 float pitch;
 float lastX = 400, lastY = 300;
 bool firstMouse = true;
-
-float deltaTime = 0.0f;	// Time between current frame and last frame
-float lastFrame = 0.0f; // Time of last frame
+// --------------
 
 int main() {
 	level = readLevel("../../../levels/level0");
@@ -62,43 +62,36 @@ int main() {
 		return EXIT_FAILURE;
 	}
 
-
 	// configure global opengl state
-	// -----------------------------
 	glEnable(GL_DEPTH_TEST);
 
 	// build and compile our shader zprogram
-	// ------------------------------------
 	Shader ourShader("../../../shaders/7.1.camera.vs", "../../../shaders/7.1.camera.xs");
 
-	//--------------------------------------------------------------------------------------------------
-	//initializeShader();
-	// load and create a texture 
-	// -------------------------
+	// load and create a texture from path
 	unsigned int texture = initializeTexture("../../../../resources/textures/container.jpg");
 
-	//--------------------------------------------------------------------------------------------------
 	GLuint walls = wallSegment();
 
 	//Gluint pellets = createPelletVao(); -> This should call createSphere();
 
-	//Create Pacman & Ghost vaos
-	//GLuint pacman = CreatePacman(); -> This should only be a walking camera. figure out
+	//Create Ghost vao
 	//GLuint Ghost = Load3DModel(path);
 
 	// tell opengl for each sampler to which texture unit it belongs to (only has to be done once)
-	// -------------------------------------------------------------------------------------------
 	ourShader.use();
 	ourShader.setInt("texture", 0);
 
 	// pass projection matrix to shader (as projection matrix rarely changes there's no need to do this per frame)
-	// -----------------------------------------------------------------------------------------------------------
 	glm::mat4 projection = glm::perspective(glm::radians(45.0f), (float)WIDTH / (float)HEIGHT, 0.1f, 100.0f);
 	ourShader.setMat4("projection", projection);
 
+	//Input configuration && callback method
 	glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 	glfwSetCursorPosCallback(window, mouse_callback);
 
+
+	//Main game loop
 	while(!glfwWindowShouldClose(window)){
 
 		//Deltatime calculation
@@ -109,6 +102,8 @@ int main() {
 		//Input 
 		//TODO:: Add player position checks against pellet class position and flip pelletActive boolean if hit
 		processInput(window);
+
+		//Run ghost AIs
 
 		//Draw everything \/\/\/
 		glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
@@ -137,9 +132,6 @@ int main() {
 
 			glDrawArrays(GL_TRIANGLES, 0, 36);
 		}
-
-		//Compute Player Movement && Update pellets
-		//Run ghost AI
 
 		//Draw pellets
 		//Draw ghost(s)
