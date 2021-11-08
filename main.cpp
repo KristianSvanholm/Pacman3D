@@ -37,9 +37,11 @@ int initialize();
 
 //Game variables
 vector<glm::vec3> level;
-vector<Pellet*> pellets;
+vector<glm::vec3> pellets;
 float deltaTime = 0.0f;	// Time between current frame and last frame
 float lastFrame = 0.0f; // Time of last frame
+bool win = false;
+bool gameOver = false;
 //-------------
 
 //Screen
@@ -55,7 +57,7 @@ glm::vec3 cameraFront = glm::vec3(0.0f, 0.0f, -1.0f);
 glm::vec3 cameraUp = glm::vec3(0.0f, 1.0f, 0.0f);
 float yaw = -90.0f;
 float pitch;
-float lastX = 400, lastY = 300;
+float lastX = WIDTH/2, lastY = HEIGHT/2;
 bool firstMouse = true;
 // --------------
 
@@ -73,7 +75,8 @@ int main() {
 	Shader ourShader("../../../shaders/7.1.camera.vs", "../../../shaders/7.1.camera.xs");
 
 	// load and create a texture from path
-	unsigned int texture = initializeTexture("../../../../resources/textures/container.jpg");
+	unsigned int wallTexture = initializeTexture("../../../../resources/textures/wall.jpg");
+	unsigned int pelletTexture = initializeTexture("../../../../resources/textures/yellow.jpg");
 
 	GLuint wallVAO = wallSegment();
 	GLuint pelletVAO = pellet();
@@ -95,7 +98,6 @@ int main() {
 	glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 	glfwSetCursorPosCallback(window, mouse_callback);
 
-
 	//Main game loop
 	while(!glfwWindowShouldClose(window)){
 
@@ -104,29 +106,39 @@ int main() {
 		deltaTime = currentFrame - lastFrame;
 		lastFrame = currentFrame;
 
-		//Input 
-		//TODO:: Add player position checks against pellet class position and flip pelletActive boolean if hit
+		//PELLETS
+		for (int i = 0; i < pellets.size(); i++) {
+			//If pellets withing pickup range of player: remove it from vector
+			if (glm::distance(pellets[i], cameraPos) < 0.5f) {
+				pellets.erase(pellets.begin()+i);
+			}
+		}
+		if (pellets.size() == 0) { //win condition
+			win = true;
+		}
+
+		//userInput
 		processInput(window);
 
 		//Run ghost AIs
 
 		//Draw everything \/\/\/
-		glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
+		glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-		//bind textures on corresponding texture units
-		glActiveTexture(GL_TEXTURE0);
-		glBindTexture(GL_TEXTURE_2D, texture);
 
 		// activate shader
 		ourShader.use();
 
 		// camera/view transformation
 		glm::mat4 view = glm::mat4(1.0f); // make sure to initialize matrix to identity matrix first
-		view = glm::lookAt(cameraPos, cameraPos + cameraFront, cameraUp);
+		if (!win && !gameOver) {
+			view = glm::lookAt(cameraPos, cameraPos + cameraFront, cameraUp);
+		}
 		ourShader.setMat4("view", view);
 
-		//Draw walls
+		//Draw walls && bind texture
+		glActiveTexture(GL_TEXTURE0);
+		glBindTexture(GL_TEXTURE_2D, wallTexture);
 		glBindVertexArray(wallVAO);
 		for (unsigned int i = 0; i < level.size(); i++)
 		{
@@ -138,18 +150,19 @@ int main() {
 			glDrawArrays(GL_TRIANGLES, 0, 36);
 		}
 
-		//Draw pellets
+		//Draw pellets && bind texture
+		glActiveTexture(GL_TEXTURE0);
+		glBindTexture(GL_TEXTURE_2D, pelletTexture);
+
 		glBindVertexArray(pelletVAO);
 		for (unsigned int i = 0; i < pellets.size(); i++)
 		{
-			if (pellets[i]->active) {
-				// calculate the model matrix for each object and pass it to shader before drawing
-				glm::mat4 model = glm::mat4(1.0f);
-				model = glm::translate(model, pellets[i]->position);
-				ourShader.setMat4("model", model);
+			// calculate the model matrix for each object and pass it to shader before drawing
+			glm::mat4 model = glm::mat4(1.0f);
+			model = glm::translate(model, pellets[i]);
+			ourShader.setMat4("model", model);
 
-				glDrawArrays(GL_TRIANGLES, 0, 36);
-			}
+			glDrawArrays(GL_TRIANGLES, 0, 36);
 		}
 
 		//Draw ghost(s)
@@ -231,7 +244,7 @@ unsigned int initializeTexture(string path) {
 	}
 	else
 	{
-		std::cout << "Failed to load texture" << std::endl;
+		std::cout << "Failed to load texture from " << path << std::endl;
 	}
 	stbi_image_free(data);
 	return texture;
@@ -252,14 +265,16 @@ void processInput(GLFWwindow* window)
 	float cameraSpeed = 2.5f * deltaTime;	
 
 	//Input handler
-	if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
-		cameraPos += cameraSpeed * move;
-	if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
-		cameraPos -= cameraSpeed * move;
-	if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
-		cameraPos -= glm::normalize(glm::cross(move, cameraUp)) * cameraSpeed;
-	if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
-		cameraPos += glm::normalize(glm::cross(move, cameraUp)) * cameraSpeed;
+	if (!win && !gameOver) {
+		if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
+			cameraPos += cameraSpeed * move;
+		if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
+			cameraPos -= cameraSpeed * move;
+		if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
+			cameraPos -= glm::normalize(glm::cross(move, cameraUp)) * cameraSpeed;
+		if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
+			cameraPos += glm::normalize(glm::cross(move, cameraUp)) * cameraSpeed;
+	}
 }
 
 /// <summary>
@@ -325,8 +340,7 @@ void readLevel(string path) {
 					level.push_back(glm::vec3(i, 0, j));
 				}
 				else if (data == 0) {
-					Pellet* newPellet = new Pellet(glm::vec3(i,0,j));
-					pellets.push_back(newPellet);
+					pellets.push_back(glm::vec3(i, -0.25, j));
 				}
 				else if (data == 2) {
 					cameraPos.x = i;
