@@ -23,7 +23,6 @@
 using namespace std;
 
 //Methods
-void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods);
 vector<glm::vec3> readLevel(string path);
 GLuint wallSegment();
 int initialize();
@@ -86,9 +85,6 @@ int main() {
 	//Create Pacman & Ghost vaos
 	//GLuint pacman = CreatePacman(); -> This should only be a walking camera. figure out
 	//GLuint Ghost = Load3DModel(path);
-
-	// key catcher
-	glfwSetKeyCallback(window, key_callback);
 
 	// tell opengl for each sampler to which texture unit it belongs to (only has to be done once)
 	// -------------------------------------------------------------------------------------------
@@ -205,8 +201,7 @@ void mouse_callback(GLFWwindow* window, double xpos, double ypos)
 /// <returns>texture</returns>
 unsigned int initializeTexture(string path) {
 	unsigned int texture;
-	// texture 1
-	// ---------
+
 	glGenTextures(1, &texture);
 	glBindTexture(GL_TEXTURE_2D, texture);
 	// set the texture wrapping parameters
