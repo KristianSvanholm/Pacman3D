@@ -13,7 +13,6 @@
 
 //GLM
 #include "glm/glm/glm.hpp"
-#include "glm/glm/gtc/type_ptr.hpp"
 #include "glm/glm/gtc/matrix_transform.hpp"
 
 //Learn OPGENL
@@ -451,7 +450,12 @@ GLuint pellet() {
 		 0.10f, -0.10f,  0.10f,  0.0f, 0.0f,
 		 0.10f,  0.10f,  0.10f,  1.0f, 0.0f,
 
-		 //Removed top and bottom faces as they will never be seen anyways
+		-0.10f,  0.10f, -0.10f,  0.0f, 1.0f,
+		 0.10f,  0.10f, -0.10f,  1.0f, 1.0f,
+		 0.10f,  0.10f,  0.10f,  1.0f, 0.0f,
+		 0.10f,  0.10f,  0.10f,  1.0f, 0.0f,
+		-0.10f,  0.10f,  0.10f,  0.0f, 0.0f,
+		-0.10f,  0.10f, -0.10f,  0.0f, 1.0f
 	};
 
 	unsigned int VBO, VAO;
