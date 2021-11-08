@@ -20,20 +20,24 @@
 #include "learnopengl/shader_m.h"
 #include "learnopengl/filesystem.h"
 
+//custom classes
+#include "pellet.h"
+
 using namespace std;
 
 //Methods
-vector<glm::vec3> readLevel(string path);
+void readLevel(string path);
 unsigned int initializeTexture(string path);
 GLuint wallSegment();
+GLuint pellet();
 void mouse_callback(GLFWwindow* window, double xpos, double ypos);
 void processInput(GLFWwindow* window);
-void initializeShader();
 int initialize();
 //------
 
 //Game variables
 vector<glm::vec3> level;
+vector<Pellet*> pellets;
 float deltaTime = 0.0f;	// Time between current frame and last frame
 float lastFrame = 0.0f; // Time of last frame
 //-------------
@@ -46,7 +50,7 @@ GLFWwindow* window;
 //-----
 
 //Camera variables
-glm::vec3 cameraPos = glm::vec3(17.0f, 0.0f, 28.0f);
+glm::vec3 cameraPos = glm::vec3(0.0f, 0.0f, 0.0f);
 glm::vec3 cameraFront = glm::vec3(0.0f, 0.0f, -1.0f);
 glm::vec3 cameraUp = glm::vec3(0.0f, 1.0f, 0.0f);
 float yaw = -90.0f;
@@ -56,7 +60,7 @@ bool firstMouse = true;
 // --------------
 
 int main() {
-	level = readLevel("../../../levels/level0");
+	readLevel("../../../levels/level0");
 
 	if (initialize() == EXIT_FAILURE) {
 		return EXIT_FAILURE;
@@ -71,7 +75,8 @@ int main() {
 	// load and create a texture from path
 	unsigned int texture = initializeTexture("../../../../resources/textures/container.jpg");
 
-	GLuint walls = wallSegment();
+	GLuint wallVAO = wallSegment();
+	GLuint pelletVAO = pellet();
 
 	//Gluint pellets = createPelletVao(); -> This should call createSphere();
 
@@ -122,7 +127,7 @@ int main() {
 		ourShader.setMat4("view", view);
 
 		//Draw walls
-		glBindVertexArray(walls);
+		glBindVertexArray(wallVAO);
 		for (unsigned int i = 0; i < level.size(); i++)
 		{
 			// calculate the model matrix for each object and pass it to shader before drawing
@@ -134,6 +139,19 @@ int main() {
 		}
 
 		//Draw pellets
+		glBindVertexArray(pelletVAO);
+		for (unsigned int i = 0; i < pellets.size(); i++)
+		{
+			if (pellets[i]->active) {
+				// calculate the model matrix for each object and pass it to shader before drawing
+				glm::mat4 model = glm::mat4(1.0f);
+				model = glm::translate(model, pellets[i]->position);
+				ourShader.setMat4("model", model);
+
+				glDrawArrays(GL_TRIANGLES, 0, 36);
+			}
+		}
+
 		//Draw ghost(s)
 
 		glfwSwapBuffers(window);
@@ -288,8 +306,7 @@ int initialize() {
 	return 0;
 }
 
-vector<glm::vec3> readLevel(string path) {
-	vector<glm::vec3> level;
+void readLevel(string path) {
 	ifstream lvlFile(path);
 	if (lvlFile)
 	{
@@ -307,15 +324,20 @@ vector<glm::vec3> readLevel(string path) {
 				if (data == 1) {
 					level.push_back(glm::vec3(i, 0, j));
 				}
-				if (data == 2) {
-					//TODO instantiate Pacman at given coordinates
-					//pac = new Pacman(j, i);
+				else if (data == 0) {
+					Pellet* newPellet = new Pellet(glm::vec3(i,0,j));
+					pellets.push_back(newPellet);
+				}
+				else if (data == 2) {
+					cameraPos.x = i;
+					cameraPos.z = j;
 				}
 
 			}
 			cout << endl;
 		}
 
+		//TODO:: REWRITE THIS
 		//Generate ghost position
 		//RNG seeded by current time in seconds since January 1st, 1970
 		srand(time(NULL));
@@ -332,7 +354,6 @@ vector<glm::vec3> readLevel(string path) {
 		cout << "\n --Unable to read file " << path;
 	}
 	lvlFile.close();
-	return level;
 }
 
 GLuint wallSegment() {
@@ -364,6 +385,57 @@ GLuint wallSegment() {
 		 0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
 		 0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
 		 0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+
+		 //Removed top and bottom faces as they will never be seen anyways
+	};
+
+	unsigned int VBO, VAO;
+	glGenVertexArrays(1, &VAO);
+	glGenBuffers(1, &VBO);
+
+	glBindVertexArray(VAO);
+
+	glBindBuffer(GL_ARRAY_BUFFER, VBO);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+
+	// position attribute
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)0);
+	glEnableVertexAttribArray(0);
+	// texture coord attribute
+	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3 * sizeof(float)));
+	glEnableVertexAttribArray(1);
+	return VAO;
+}
+
+GLuint pellet() {
+	float vertices[] = {
+		-0.10f, -0.10f, -0.10f,  0.0f, 0.0f,
+		 0.10f, -0.10f, -0.10f,  1.0f, 0.0f,
+		 0.10f,  0.10f, -0.10f,  1.0f, 1.0f,
+		 0.10f,  0.10f, -0.10f,  1.0f, 1.0f,
+		-0.10f,  0.10f, -0.10f,  0.0f, 1.0f,
+		-0.10f, -0.10f, -0.10f,  0.0f, 0.0f,
+
+		-0.10f, -0.10f,  0.10f,  0.0f, 0.0f,
+		 0.10f, -0.10f,  0.10f,  1.0f, 0.0f,
+		 0.10f,  0.10f,  0.10f,  1.0f, 1.0f,
+		 0.10f,  0.10f,  0.10f,  1.0f, 1.0f,
+		-0.10f,  0.10f,  0.10f,  0.0f, 1.0f,
+		-0.10f, -0.10f,  0.10f,  0.0f, 0.0f,
+
+		-0.10f,  0.10f,  0.10f,  1.0f, 0.0f,
+		-0.10f,  0.10f, -0.10f,  1.0f, 1.0f,
+		-0.10f, -0.10f, -0.10f,  0.0f, 1.0f,
+		-0.10f, -0.10f, -0.10f,  0.0f, 1.0f,
+		-0.10f, -0.10f,  0.10f,  0.0f, 0.0f,
+		-0.10f,  0.10f,  0.10f,  1.0f, 0.0f,
+
+		 0.10f,  0.10f,  0.10f,  1.0f, 0.0f,
+		 0.10f,  0.10f, -0.10f,  1.0f, 1.0f,
+		 0.10f, -0.10f, -0.10f,  0.0f, 1.0f,
+		 0.10f, -0.10f, -0.10f,  0.0f, 1.0f,
+		 0.10f, -0.10f,  0.10f,  0.0f, 0.0f,
+		 0.10f,  0.10f,  0.10f,  1.0f, 0.0f,
 
 		 //Removed top and bottom faces as they will never be seen anyways
 	};
