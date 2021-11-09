@@ -60,7 +60,7 @@ bool firstMouse = true;
 
 //Testing
 bool collides(glm::vec3 pos);
-vector<bool> collision(glm::vec3 wallPos);
+void movePlayer(glm::vec3 input);
 
 int main() {
 
@@ -268,37 +268,36 @@ void processInput(GLFWwindow* window)
 	float cameraSpeed = 2.5f * deltaTime;	
 
 	//Input handler
-	glm::vec3 testCam = cameraPos;
-
 	if (!win && !gameOver) {
 		if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS) {
-			testCam += cameraSpeed * move;
-			if (!collides(testCam)) {
-				cameraPos += cameraSpeed * move;
-			}
-			testCam = cameraPos;
+			movePlayer(move * cameraSpeed);
 		}
 		if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS) {
-			testCam -= cameraSpeed * move;
-			if (!collides(testCam)) {
-				cameraPos -= cameraSpeed * move;
-			}
-			testCam = cameraPos;
+			movePlayer(-move * cameraSpeed);
 		}
 		if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS) {
-			testCam -= glm::normalize(glm::cross(move, cameraUp)) * cameraSpeed;
-			if (!collides(testCam)) {
-				cameraPos -= glm::normalize(glm::cross(move, cameraUp)) * cameraSpeed;
-			}
-			testCam = cameraPos;
+			movePlayer(-glm::normalize(glm::cross(move, cameraUp)) * cameraSpeed);
 		}
 		if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS) {
-			testCam += glm::normalize(glm::cross(move, cameraUp)) * cameraSpeed;
-			if (!collides(testCam)) {
-				cameraPos += glm::normalize(glm::cross(move, cameraUp)) * cameraSpeed;
-			}
-			testCam = cameraPos;
+			movePlayer(glm::normalize(glm::cross(move, cameraUp)) * cameraSpeed);
 		}
+	}
+}
+
+void movePlayer(glm::vec3 input) {
+	glm::vec3 test = cameraPos;
+
+	//x
+	test.x += input.x;
+	test.z = cameraPos.z;
+	if (!collides(test)) {
+		cameraPos.x = test.x;
+	}
+	//z
+	test.x = cameraPos.x;
+	test.z += input.z;
+	if (!collides(test)) {
+		cameraPos.z = test.z;
 	}
 }
 
@@ -312,42 +311,11 @@ bool collides(glm::vec3 pos) {
 		xColl = wall.x + size >= pos.x && wall.x - size <= pos.x;
 		zColl = wall.z + size >= pos.z && wall.z - size <= pos.z;
 
-		if (xColl && zColl) { cout << "coll" << endl; return xColl && zColl; }
+		if (xColl && zColl) {
+			return xColl && zColl;
+		}
 	}
 	return false;
-}
-
-vector<bool> collision(glm::vec3 wallPos) {
-	vector<bool> collisions =
-	{
-		false, // If there was a collision
-		false, // if player is inside right x-bound of box
-		false, // if player is inside left x-bound of box
-		false, // if player is inside top z-bound of box
-		false, // if player is inside bottom z-bound of box
-	};
-
-	float x = wallPos.x;
-	float z = wallPos.z;
-	float size = 0.60f;
-
-	if ((x + size) >= cameraPos.x) {
-		collisions[1] = true;
-	}
-	if ((x - size) <= cameraPos.x) {
-		collisions[2] = true;
-	}
-
-	if ((z + size) >= cameraPos.z) {
-		collisions[3] = true;
-	}
-	if ((z - size) <= cameraPos.z) {
-		collisions[4] = true;
-	}
-
-	collisions[0] = collisions[1] && collisions[2] && collisions[3] && collisions[4];
-
-	return collisions;
 }
 
 /// <summary>
