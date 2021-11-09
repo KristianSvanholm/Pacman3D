@@ -19,9 +19,6 @@
 #include "learnopengl/shader_m.h"
 #include "learnopengl/filesystem.h"
 
-//custom classes
-#include "pellet.h"
-
 using namespace std;
 
 //Methods
@@ -56,11 +53,17 @@ glm::vec3 cameraFront = glm::vec3(0.0f, 0.0f, -1.0f);
 glm::vec3 cameraUp = glm::vec3(0.0f, 1.0f, 0.0f);
 float yaw = -90.0f;
 float pitch;
-float lastX = WIDTH/2, lastY = HEIGHT/2;
+float lastX = WIDTH / 2, lastY = HEIGHT / 2;
 bool firstMouse = true;
 // --------------
 
+
+//Testing
+bool collides(glm::vec3 pos);
+vector<bool> collision(glm::vec3 wallPos);
+
 int main() {
+
 	readLevel("../../../levels/level0");
 
 	if (initialize() == EXIT_FAILURE) {
@@ -70,8 +73,8 @@ int main() {
 	// configure global opengl state
 	glEnable(GL_DEPTH_TEST);
 
-	// build and compile our shader zprogram
-	Shader ourShader("../../../shaders/7.1.camera.vs", "../../../shaders/7.1.camera.xs");
+	// build and compile our shader program
+	Shader ourShader("../../../shaders/7.1.camera.vs", "../../../shaders/7.1.camera.frag");
 
 	// load and create a texture from path
 	unsigned int wallTexture = initializeTexture("../../../../resources/textures/wall.jpg");
@@ -259,21 +262,92 @@ void processInput(GLFWwindow* window)
 	//Player movement (Take in direction and ground it so that player cant fly
 	glm::vec3 move = cameraFront;
 	move.y = 0;
+
 	glm::normalize(move);
 
 	float cameraSpeed = 2.5f * deltaTime;	
 
 	//Input handler
+	glm::vec3 testCam = cameraPos;
+
 	if (!win && !gameOver) {
-		if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
-			cameraPos += cameraSpeed * move;
-		if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
-			cameraPos -= cameraSpeed * move;
-		if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
-			cameraPos -= glm::normalize(glm::cross(move, cameraUp)) * cameraSpeed;
-		if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
-			cameraPos += glm::normalize(glm::cross(move, cameraUp)) * cameraSpeed;
+		if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS) {
+			testCam += cameraSpeed * move;
+			if (!collides(testCam)) {
+				cameraPos += cameraSpeed * move;
+			}
+			testCam = cameraPos;
+		}
+		if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS) {
+			testCam -= cameraSpeed * move;
+			if (!collides(testCam)) {
+				cameraPos -= cameraSpeed * move;
+			}
+			testCam = cameraPos;
+		}
+		if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS) {
+			testCam -= glm::normalize(glm::cross(move, cameraUp)) * cameraSpeed;
+			if (!collides(testCam)) {
+				cameraPos -= glm::normalize(glm::cross(move, cameraUp)) * cameraSpeed;
+			}
+			testCam = cameraPos;
+		}
+		if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS) {
+			testCam += glm::normalize(glm::cross(move, cameraUp)) * cameraSpeed;
+			if (!collides(testCam)) {
+				cameraPos += glm::normalize(glm::cross(move, cameraUp)) * cameraSpeed;
+			}
+			testCam = cameraPos;
+		}
 	}
+}
+
+bool collides(glm::vec3 pos) {
+	bool xColl, zColl;
+	float size = 0.75;
+
+	for (int i = 0; i < level.size(); i++) {
+		glm::vec3 wall = level[i];
+
+		xColl = wall.x + size >= pos.x && wall.x - size <= pos.x;
+		zColl = wall.z + size >= pos.z && wall.z - size <= pos.z;
+
+		if (xColl && zColl) { cout << "coll" << endl; return xColl && zColl; }
+	}
+	return false;
+}
+
+vector<bool> collision(glm::vec3 wallPos) {
+	vector<bool> collisions =
+	{
+		false, // If there was a collision
+		false, // if player is inside right x-bound of box
+		false, // if player is inside left x-bound of box
+		false, // if player is inside top z-bound of box
+		false, // if player is inside bottom z-bound of box
+	};
+
+	float x = wallPos.x;
+	float z = wallPos.z;
+	float size = 0.60f;
+
+	if ((x + size) >= cameraPos.x) {
+		collisions[1] = true;
+	}
+	if ((x - size) <= cameraPos.x) {
+		collisions[2] = true;
+	}
+
+	if ((z + size) >= cameraPos.z) {
+		collisions[3] = true;
+	}
+	if ((z - size) <= cameraPos.z) {
+		collisions[4] = true;
+	}
+
+	collisions[0] = collisions[1] && collisions[2] && collisions[3] && collisions[4];
+
+	return collisions;
 }
 
 /// <summary>
