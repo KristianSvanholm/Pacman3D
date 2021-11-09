@@ -22,12 +22,14 @@
 using namespace std;
 
 //Methods
-void readLevel(string path);
 unsigned int initializeTexture(string path);
 GLuint wallSegment();
 GLuint pellet();
 void mouse_callback(GLFWwindow* window, double xpos, double ypos);
 void processInput(GLFWwindow* window);
+void readLevel(string path);
+void movePlayer(glm::vec3 input);
+bool collides(glm::vec3 pos);
 int initialize();
 //------
 
@@ -58,9 +60,6 @@ bool firstMouse = true;
 // --------------
 
 
-//Testing
-bool collides(glm::vec3 pos);
-void movePlayer(glm::vec3 input);
 
 int main() {
 
