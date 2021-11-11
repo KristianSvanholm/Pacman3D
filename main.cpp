@@ -3,6 +3,8 @@
 #include <fstream>
 #include <sstream>
 #include <vector>
+#include <set>
+#include <cmath>
 
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
@@ -19,7 +21,27 @@
 #include "learnopengl/shader_m.h"
 #include "learnopengl/filesystem.h"
 
+
+#define TINYOBJLOADER_IMPLEMENTATION
+#include "tinyobjloader/tiny_obj_loader.h"
+
+
 using namespace std;
+
+
+
+//------------------------------------------------------------------------------
+// VERTEX STRUCT
+//------------------------------------------------------------------------------
+struct Vertex
+{
+	glm::vec3 location;
+	glm::vec3 normals;
+	glm::vec2 texCoords;
+};
+
+GLuint LoadModel(const std::string path, int& size);
+
 
 //Methods
 unsigned int initializeTexture(string path);
@@ -81,6 +103,11 @@ int main() {
 
 	GLuint wallVAO = wallSegment();
 	GLuint pelletVAO = pellet();
+
+
+	// testing loadmodel
+	int size = 0;
+	GLuint testVAO = LoadModel("../../../resources/model/newell_teaset", size);
 
 	//Gluint pellets = createPelletVao(); -> This should call createSphere();
 
@@ -514,5 +541,88 @@ GLuint pellet() {
 	// texture coord attribute
 	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3 * sizeof(float)));
 	glEnableVertexAttribArray(1);
+	return VAO;
+}
+
+
+
+
+
+GLuint LoadModel(const std::string path, int& size)
+{
+
+	//We create a vector of Vertex structs. OpenGL can understand these, and so will accept them as input.
+	vector<Vertex> vertices;
+
+	//Some variables that we are going to use to store data from tinyObj
+	tinyobj::attrib_t attrib;
+	vector<tinyobj::shape_t> shapes;
+	vector<tinyobj::material_t> materials; //This one goes unused for now, seeing as we don't need materials for this model.
+
+	//Some variables incase there is something wrong with our obj file
+	string warn;
+	string err;
+
+	//We use tinobj to load our models. Feel free to find other .obj files and see if you can load them.
+	tinyobj::LoadObj(&attrib, &shapes, &materials, &warn, &err, (path + "/pacman-ghosts.obj").c_str(), path.c_str());
+
+	if (!warn.empty()) {
+		cout << warn << std::endl;
+	}
+
+	if (!err.empty()) {
+		cerr << err << std::endl;
+	}
+
+	//For each shape defined in the obj file
+	for (auto shape : shapes)
+	{
+		//We find each mesh
+		for (auto meshIndex : shape.mesh.indices)
+		{
+			//And store the data for each vertice, including normals
+			glm::vec3 vertice = {
+				attrib.vertices[meshIndex.vertex_index * 3],
+				attrib.vertices[(meshIndex.vertex_index * 3) + 1],
+				attrib.vertices[(meshIndex.vertex_index * 3) + 2]
+			};
+			glm::vec3 normal = {
+				attrib.normals[meshIndex.normal_index * 3],
+				attrib.normals[(meshIndex.normal_index * 3) + 1],
+				attrib.normals[(meshIndex.normal_index * 3) + 2]
+			};
+			glm::vec2 textureCoordinate = {                         //These go unnused, but if you want textures, you will need them.
+				attrib.texcoords[meshIndex.texcoord_index * 2],
+				attrib.texcoords[(meshIndex.texcoord_index * 2) + 1]
+			};
+
+			vertices.push_back({ vertice, normal, textureCoordinate }); //We add our new vertice struct to our vector
+
+		}
+	}
+
+	GLuint VAO;
+	glGenVertexArrays(1, &VAO);
+	glBindVertexArray(VAO);
+
+	GLuint VBO;
+	glGenBuffers(1, &VBO);
+	glBindBuffer(GL_ARRAY_BUFFER, VBO);
+
+	//As you can see, OpenGL will accept a vector of structs as a valid input here
+	glBufferData(GL_ARRAY_BUFFER, sizeof(Vertex) * vertices.size(), &vertices[0], GL_STATIC_DRAW);
+
+	glEnableVertexAttribArray(0);
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(float) * 8, nullptr);
+
+	glEnableVertexAttribArray(1);
+	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(float) * 8, (void*)(sizeof(float) * 3));
+
+	glEnableVertexAttribArray(2);
+	glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, sizeof(float) * 8, (void*)(sizeof(float) * 6));
+
+	//This will be needed later to specify how much we need to draw. Look at the main loop to find this variable again.
+	size = vertices.size();
+
 	return VAO;
 }
