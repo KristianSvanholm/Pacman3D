@@ -19,6 +19,8 @@
 #include "learnopengl/shader_m.h"
 #include "learnopengl/filesystem.h"
 
+
+#include "ghost.h";
 using namespace std;
 
 //Methods
@@ -59,6 +61,9 @@ float lastX = WIDTH / 2, lastY = HEIGHT / 2;
 bool firstMouse = true;
 // --------------
 
+//test
+vector<vector<int>> ghostLvl;
+Ghost *ghost;
 
 
 int main() {
@@ -121,7 +126,7 @@ int main() {
 		//userInput
 		processInput(window);
 
-		//Run ghost AIs
+		ghost->updateGhost(currentFrame,deltaTime);
 
 		//Draw everything \/\/\/
 		glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
@@ -165,6 +170,12 @@ int main() {
 
 			glDrawArrays(GL_TRIANGLES, 0, 36);
 		}
+
+		glm::mat4 model = glm::mat4(1.0f);
+		model = glm::translate(model, ghost->getPosition());
+		ourShader.setMat4("model", model);
+
+		glDrawArrays(GL_TRIANGLES, 0, 36);
 
 		//Draw ghost(s)
 
@@ -260,7 +271,7 @@ void processInput(GLFWwindow* window)
 
 	//Player movement (Take in direction and ground it so that player cant fly
 	glm::vec3 move = cameraFront;
-	move.y = 0;
+	//move.y = 0;
 
 	glm::normalize(move);
 
@@ -362,6 +373,7 @@ int initialize() {
 }
 
 void readLevel(string path) {
+
 	ifstream lvlFile(path);
 	if (lvlFile)
 	{
@@ -370,6 +382,11 @@ void readLevel(string path) {
 		int xMax = stoi(size.substr(0, 2));
 		int yMax = stoi(size.substr(3));
 
+		ghostLvl = vector<vector<int>>(xMax);
+		for (int i = 0; i < xMax; i++) {
+			ghostLvl[i] = vector<int>(yMax);
+		}
+
 		// Print current level
 		cout << xMax << "*" << yMax << endl;
 		for (int i = 0; i < yMax; i++) {
@@ -377,12 +394,15 @@ void readLevel(string path) {
 				int data;
 				lvlFile >> data;
 				if (data == 1) {
-					level.push_back(glm::vec3(i, 0, j));
+					level.push_back(glm::vec3(j, 0, i));
+					ghostLvl[j][i] = 1;
 				}
 				else if (data == 0) {
-					pellets.push_back(glm::vec3(i, -0.25, j));
+					pellets.push_back(glm::vec3(j, -0.25, i));
+					ghostLvl[j][i] = 0;
 				}
 				else if (data == 2) {
+					ghostLvl[j][i] = 1;
 					cameraPos.x = i;
 					cameraPos.z = j;
 				}
@@ -401,7 +421,7 @@ void readLevel(string path) {
 			randY = rand() % (yMax - 1);
 		} while (false); // checks for tunnel
 		//TODO Instantiate new ghost(s?) at given position(s?)
-		//ghost = new Ghost(randX, randY);
+		ghost = new Ghost(ghostLvl, cameraPos.x, cameraPos.z);
 
 	}
 	else {
