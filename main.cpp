@@ -58,6 +58,7 @@ int initialize();
 //Game variables
 vector<glm::vec3> level;
 vector<glm::vec3> pellets;
+
 float deltaTime = 0.0f;	// Time between current frame and last frame
 float lastFrame = 0.0f; // Time of last frame
 bool win = false;
@@ -100,6 +101,7 @@ int main() {
 	// load and create a texture from path
 	unsigned int wallTexture = initializeTexture("../../../../resources/textures/wall.jpg");
 	unsigned int pelletTexture = initializeTexture("../../../../resources/textures/yellow.jpg");
+	unsigned int ghostTexture = initializeTexture("../../../../resources/textures/red.jpg");
 
 	GLuint wallVAO = wallSegment();
 	GLuint pelletVAO = pellet();
@@ -107,7 +109,7 @@ int main() {
 
 	// testing loadmodel
 	int size = 0;
-	GLuint testVAO = LoadModel("../../../resources/model/newell_teaset", size);
+	GLuint ghostVAO = LoadModel("../../../resources/model/newell_teaset", size);
 
 	//Gluint pellets = createPelletVao(); -> This should call createSphere();
 
@@ -163,37 +165,47 @@ int main() {
 			view = glm::lookAt(cameraPos, cameraPos + cameraFront, cameraUp);
 		}
 		ourShader.setMat4("view", view);
-
+		/*
 		//Draw walls && bind texture
 		glActiveTexture(GL_TEXTURE0);
 		glBindTexture(GL_TEXTURE_2D, wallTexture);
 		glBindVertexArray(wallVAO);
+
 		for (unsigned int i = 0; i < level.size(); i++)
 		{
 			// calculate the model matrix for each object and pass it to shader before drawing
 			glm::mat4 model = glm::mat4(1.0f);
 			model = glm::translate(model, level[i]);
 			ourShader.setMat4("model", model);
-
 			glDrawArrays(GL_TRIANGLES, 0, 36);
 		}
-
+		*/
+		
 		//Draw pellets && bind texture
 		glActiveTexture(GL_TEXTURE0);
 		glBindTexture(GL_TEXTURE_2D, pelletTexture);
-
 		glBindVertexArray(pelletVAO);
+
 		for (unsigned int i = 0; i < pellets.size(); i++)
 		{
 			// calculate the model matrix for each object and pass it to shader before drawing
 			glm::mat4 model = glm::mat4(1.0f);
 			model = glm::translate(model, pellets[i]);
 			ourShader.setMat4("model", model);
-
-			glDrawArrays(GL_TRIANGLES, 0, 36);
+			glDrawArrays(GL_TRIANGLES, 0, 36);	
 		}
 
+		
+
 		//Draw ghost(s)
+		glActiveTexture(GL_TEXTURE0);
+		glBindTexture(GL_TEXTURE_2D, ghostTexture);
+		glBindVertexArray(ghostVAO);
+		glDrawArrays(GL_TRIANGLES, 6, size);
+		
+		
+
+		//cout << size << endl;   109248
 
 		glfwSwapBuffers(window);
 		glfwPollEvents();
