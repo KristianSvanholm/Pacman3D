@@ -110,10 +110,11 @@ int main() {
 	unsigned int ghostTexture = initializeTexture("../../../../resources/textures/tex.jpg");
 
 	GLuint wallVAO = wallSegment();
-	int size = 0;
-	//GLuint pelletVAO = LoadModel("../../../resources/model/pellets/", "globe-sphere.obj", size);
-	GLuint pelletVAO = pellet();
+	int sizeP = 0;
+	GLuint pelletVAO = LoadModel("../../../resources/model/pellets/", "globe-sphere.obj", sizeP);
+	//GLuint pelletVAO = pellet();
 
+	int size = 0;
 	// testing loadmodel
 	GLuint ghostVAO = LoadModel("../../../resources/model/ghost/","pacman-ghosts.obj", size);
 
@@ -193,8 +194,9 @@ int main() {
 			// calculate the model matrix for each object and pass it to shader before drawing
 			glm::mat4 model = glm::mat4(1.0f);
 			model = glm::translate(model, pellets[i]);
+			model = glm::scale(model, glm::vec3(0.3, 0.3, 0.3));
 			ourShader.setMat4("model", model);
-			glDrawArrays(GL_TRIANGLES, 0, 36);	
+			glDrawArrays(GL_TRIANGLES, 0, sizeP);	
 		}
 
 		//Draw ghost(s)

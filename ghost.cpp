@@ -110,7 +110,7 @@ void Ghost::move(float time) {
 	gridPosition.z += dir.y;
 
 	//cout << gridPosition.x << " - " << gridPosition.z << endl;
-	level[gridPosition.x][gridPosition.z] = 3;
+	//level[gridPosition.x][gridPosition.z] = 3;
 
 	lastTime = time;
 }
