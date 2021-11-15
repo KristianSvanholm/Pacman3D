@@ -1,6 +1,6 @@
 #ifndef Ghost_header
 #define Ghost_header
-#include<vector>;
+#include<vector>
 #include "glm/glm/glm.hpp"
 using namespace std;
 

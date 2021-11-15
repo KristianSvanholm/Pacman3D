@@ -1,6 +1,6 @@
-#include"ghost.h";
-#include<vector>;
-#include<iostream>;
+#include"ghost.h"
+#include<vector>
+#include<iostream>
 #include "glm/glm/glm.hpp"
 
 using namespace std;
