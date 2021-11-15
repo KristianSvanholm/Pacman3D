@@ -6,6 +6,7 @@ using namespace std;
 
 class Ghost {
 private:
+    void Ghost::printMap();
     std::vector<std::vector<int>> level;
     bool transform;
     glm::vec2 dir;

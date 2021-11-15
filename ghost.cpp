@@ -109,6 +109,9 @@ void Ghost::move(float time) {
 	gridPosition.x += dir.x;
 	gridPosition.z += dir.y;
 
+	//cout << gridPosition.x << " - " << gridPosition.z << endl;
+	level[gridPosition.x][gridPosition.z] = 3;
+
 	lastTime = time;
 }
 
@@ -126,14 +129,25 @@ glm::vec3 Ghost::getPosition() {
 }
 
 void Ghost::lerp(float dt) {
-	linTime += dt*2;
+	linTime += dt*1;
 	if (linTime <= 1) {
 		float linx = ((float)prevGridPosition.x * (1.0 - linTime)) + ((float)gridPosition.x * linTime);
-		float liny = ((float)prevGridPosition.z * (1.0 - linTime)) + ((float)gridPosition.z * linTime);
-		exactPosition = glm::vec3(linx, gridPosition.y, liny);
+		float liny = -0.725+((float)prevGridPosition.z * (1.0 - linTime)) + ((float)gridPosition.z * linTime);
+		exactPosition = glm::vec3(liny, gridPosition.y, linx);
 	}
 	else {
+		//printMap();
 		linTime = 0;
 		transform = false;
+	}
+}
+
+void Ghost::printMap() {
+	system("CLS");
+	for (int i = 0; i < level[1].size(); i++) {
+		for (int j = 0; j < level.size(); j++) {
+			cout << level[j][i] << " ";
+		}
+		cout << endl;
 	}
 }
