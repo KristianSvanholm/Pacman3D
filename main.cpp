@@ -106,13 +106,12 @@ int main() {
 	unsigned int ghostTexture = initializeTexture("../../../../resources/textures/tex.jpg");
 
 	GLuint wallVAO = wallSegment();
-	int sizeP = 0;
-	GLuint pelletVAO = LoadModel("../../../resources/model/pellets/", "globe-sphere.obj", sizeP);
-	//GLuint pelletVAO = pellet();
 
-	int size = 0;
-	// testing loadmodel
-	GLuint ghostVAO = LoadModel("../../../resources/model/ghost/","pacman-ghosts.obj", size);
+	int pelletSize = 0;
+	GLuint pelletVAO = LoadModel("../../../resources/model/pellets/", "globe-sphere.obj", pelletSize);
+
+	int ghostSize = 0;
+	GLuint ghostVAO = LoadModel("../../../resources/model/ghost/","pacman-ghosts.obj", ghostSize);
 
 	// tell opengl for each sampler to which texture unit it belongs to (only has to be done once)
 	ourShader.use();
@@ -126,7 +125,6 @@ int main() {
 	glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 	glfwSetCursorPosCallback(window, mouse_callback);
 
-	float angle = 0;
 	//Main game loop
 	while(!glfwWindowShouldClose(window)){
 
@@ -144,6 +142,13 @@ int main() {
 		}
 		if (pellets.size() == 0) { //win condition
 			win = true;
+		}
+
+		for (int i = 0; i < ghosts.size(); i++) {
+			//If pellets withing pickup range of player: remove it from vector
+			if (glm::distance(ghosts[i]->getPosition(), cameraPos) < 1.0f) {
+				gameOver = true;
+			}
 		}
 
 		//userInput
@@ -179,7 +184,7 @@ int main() {
 			glm::mat4 model = glm::mat4(1.0f);
 			model = glm::translate(model, level[i]);
 			ourShader.setMat4("model", model);
-			//glDrawArrays(GL_TRIANGLES, 0, 36);
+			glDrawArrays(GL_TRIANGLES, 0, 36);
 		}
 		
 		
@@ -195,7 +200,7 @@ int main() {
 			model = glm::translate(model, pellets[i]);
 			model = glm::scale(model, glm::vec3(0.3, 0.3, 0.3));
 			ourShader.setMat4("model", model);
-			glDrawArrays(GL_TRIANGLES, 0, sizeP);	
+			glDrawArrays(GL_TRIANGLES, 0, pelletSize);	
 		}
 
 		//Draw ghosts && bind texture
@@ -208,7 +213,7 @@ int main() {
 			model = glm::translate(model, pos);
 			model = glm::scale(model, glm::vec3(0.75, 0.75, 0.75));
 			ourShader.setMat4("model", model);
-			glDrawArrays(GL_TRIANGLES, 6, size);
+			glDrawArrays(GL_TRIANGLES, 6, ghostSize);
 		}
 
 		glfwSwapBuffers(window);
