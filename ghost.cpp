@@ -9,7 +9,7 @@ extern bool gameOver;
 
 Ghost::Ghost(std::vector<std::vector<int>> _level, int _x, int _y)
 {
-	prevGridPosition = gridPosition = glm::vec3(_x, -0.25, _y);
+	prevGridPosition = gridPosition = glm::vec3(_x, -0.65, _y);
 	dir = glm::vec2(0, 0);
 	level = _level;
 
@@ -129,10 +129,12 @@ glm::vec3 Ghost::getPosition() {
 }
 
 void Ghost::lerp(float dt) {
+	//float offset = -0.725f;
+	float offset = 0;
 	linTime += dt*1;
 	if (linTime <= 1) {
 		float linx = ((float)prevGridPosition.x * (1.0 - linTime)) + ((float)gridPosition.x * linTime);
-		float liny = -0.725+((float)prevGridPosition.z * (1.0 - linTime)) + ((float)gridPosition.z * linTime);
+		float liny = offset+((float)prevGridPosition.z * (1.0 - linTime)) + ((float)gridPosition.z * linTime);
 		exactPosition = glm::vec3(liny, gridPosition.y, linx);
 	}
 	else {

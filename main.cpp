@@ -60,6 +60,8 @@ int initialize();
 //Game variables
 vector<glm::vec3> level;
 vector<glm::vec3> pellets;
+vector<vector<int>> ghostLvl;
+vector<Ghost*> ghosts;
 
 float deltaTime = 0.0f;	// Time between current frame and last frame
 float lastFrame = 0.0f; // Time of last frame
@@ -83,12 +85,6 @@ float pitch;
 float lastX = WIDTH / 2, lastY = HEIGHT / 2;
 bool firstMouse = true;
 // --------------
-
-
-//test
-vector<vector<int>> ghostLvl;
-Ghost* ghost;
-
 
 int main() {
 
@@ -130,6 +126,7 @@ int main() {
 	glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 	glfwSetCursorPosCallback(window, mouse_callback);
 
+	float angle = 0;
 	//Main game loop
 	while(!glfwWindowShouldClose(window)){
 
@@ -153,7 +150,9 @@ int main() {
 		processInput(window);
 
 		//Ghost
-		ghost->updateGhost(currentFrame, deltaTime);
+		for (int i = 0; i < ghosts.size(); i++) {
+			ghosts[i]->updateGhost(0, deltaTime);
+		}
 
 		//Draw everything \/\/\/
 		glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
@@ -180,7 +179,7 @@ int main() {
 			glm::mat4 model = glm::mat4(1.0f);
 			model = glm::translate(model, level[i]);
 			ourShader.setMat4("model", model);
-			glDrawArrays(GL_TRIANGLES, 0, 36);
+			//glDrawArrays(GL_TRIANGLES, 0, 36);
 		}
 		
 		
@@ -199,16 +198,18 @@ int main() {
 			glDrawArrays(GL_TRIANGLES, 0, sizeP);	
 		}
 
-		//Draw ghost(s)
+		//Draw ghosts && bind texture
 		glActiveTexture(GL_TEXTURE0);
 		glBindTexture(GL_TEXTURE_2D, ghostTexture);
 		glBindVertexArray(ghostVAO);
-		glm::mat4 model = glm::mat4(1.0f);
-		model = glm::translate(model, ghost->getPosition());
-		ourShader.setMat4("model", model);
-		glDrawArrays(GL_TRIANGLES, 6, size);
-
-		//cout << size << endl;   109248
+		for (int i=0; i<ghosts.size(); i++){
+			glm::mat4 model = glm::mat4(1.0f);
+			glm::vec3 pos = ghosts[i]->getPosition();
+			model = glm::translate(model, pos);
+			model = glm::scale(model, glm::vec3(0.75, 0.75, 0.75));
+			ourShader.setMat4("model", model);
+			glDrawArrays(GL_TRIANGLES, 6, size);
+		}
 
 		glfwSwapBuffers(window);
 		glfwPollEvents();
@@ -302,8 +303,6 @@ void processInput(GLFWwindow* window)
 
 	//Player movement (Take in direction and ground it so that player cant fly
 	glm::vec3 move = cameraFront;
-	move.y = 0;
-
 	glm::normalize(move);
 
 	float cameraSpeed = 2.5f * deltaTime;	
@@ -445,14 +444,16 @@ void readLevel(string path) {
 		//Generate ghost position
 		//RNG seeded by current time in seconds since January 1st, 1970
 		srand(time(NULL));
-		int randX, randY;
-		do {
-			randX = rand() % (xMax - 1);
-			randY = rand() % (yMax - 1);
-		} while (false); // checks for tunnel
-		//TODO Instantiate new ghost(s?) at given position(s?)
-		ghost = new Ghost(ghostLvl, cameraPos.z, cameraPos.x);
-
+		for (int i = 0; i < 4; i++) {
+			srand(rand());
+			int randX, randY;
+			do {
+				randX = rand() % (xMax - 1);
+				randY = rand() % (yMax - 1);
+			} while (ghostLvl[randX][randY] != 1); // checks for tunnel
+			//TODO Instantiate new ghost(s?) at given position(s?)
+			ghosts.push_back(new Ghost(ghostLvl, randY, randX));
+		}
 	}
 	else {
 		cout << "\n --Unable to read file " << path;
@@ -511,69 +512,8 @@ GLuint wallSegment() {
 	return VAO;
 }
 
-GLuint pellet() {
-	float vertices[] = {
-		-0.10f, -0.10f, -0.10f,  0.0f, 0.0f,
-		 0.10f, -0.10f, -0.10f,  1.0f, 0.0f,
-		 0.10f,  0.10f, -0.10f,  1.0f, 1.0f,
-		 0.10f,  0.10f, -0.10f,  1.0f, 1.0f,
-		-0.10f,  0.10f, -0.10f,  0.0f, 1.0f,
-		-0.10f, -0.10f, -0.10f,  0.0f, 0.0f,
-
-		-0.10f, -0.10f,  0.10f,  0.0f, 0.0f,
-		 0.10f, -0.10f,  0.10f,  1.0f, 0.0f,
-		 0.10f,  0.10f,  0.10f,  1.0f, 1.0f,
-		 0.10f,  0.10f,  0.10f,  1.0f, 1.0f,
-		-0.10f,  0.10f,  0.10f,  0.0f, 1.0f,
-		-0.10f, -0.10f,  0.10f,  0.0f, 0.0f,
-
-		-0.10f,  0.10f,  0.10f,  1.0f, 0.0f,
-		-0.10f,  0.10f, -0.10f,  1.0f, 1.0f,
-		-0.10f, -0.10f, -0.10f,  0.0f, 1.0f,
-		-0.10f, -0.10f, -0.10f,  0.0f, 1.0f,
-		-0.10f, -0.10f,  0.10f,  0.0f, 0.0f,
-		-0.10f,  0.10f,  0.10f,  1.0f, 0.0f,
-
-		 0.10f,  0.10f,  0.10f,  1.0f, 0.0f,
-		 0.10f,  0.10f, -0.10f,  1.0f, 1.0f,
-		 0.10f, -0.10f, -0.10f,  0.0f, 1.0f,
-		 0.10f, -0.10f, -0.10f,  0.0f, 1.0f,
-		 0.10f, -0.10f,  0.10f,  0.0f, 0.0f,
-		 0.10f,  0.10f,  0.10f,  1.0f, 0.0f,
-
-		-0.10f,  0.10f, -0.10f,  0.0f, 1.0f,
-		 0.10f,  0.10f, -0.10f,  1.0f, 1.0f,
-		 0.10f,  0.10f,  0.10f,  1.0f, 0.0f,
-		 0.10f,  0.10f,  0.10f,  1.0f, 0.0f,
-		-0.10f,  0.10f,  0.10f,  0.0f, 0.0f,
-		-0.10f,  0.10f, -0.10f,  0.0f, 1.0f
-	};
-
-	unsigned int VBO, VAO;
-	glGenVertexArrays(1, &VAO);
-	glGenBuffers(1, &VBO);
-
-	glBindVertexArray(VAO);
-
-	glBindBuffer(GL_ARRAY_BUFFER, VBO);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
-
-	// position attribute
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)0);
-	glEnableVertexAttribArray(0);
-	// texture coord attribute
-	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3 * sizeof(float)));
-	glEnableVertexAttribArray(1);
-	return VAO;
-}
-
-
-
-
-
 GLuint LoadModel(const std::string path, const std::string file, int& size)
 {
-
 	//We create a vector of Vertex structs. OpenGL can understand these, and so will accept them as input.
 	vector<Vertex> vertices;
 
