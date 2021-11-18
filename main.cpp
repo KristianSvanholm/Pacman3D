@@ -48,7 +48,6 @@ GLuint LoadModel(const std::string path, const std::string file, int& size);
 //Methods
 unsigned int initializeTexture(string path);
 GLuint wallSegment();
-GLuint pellet();
 void mouse_callback(GLFWwindow* window, double xpos, double ypos);
 void processInput(GLFWwindow* window);
 void readLevel(string path);
@@ -583,11 +582,11 @@ GLuint LoadModel(const std::string path, const std::string file, int& size)
 	glEnableVertexAttribArray(0);
 	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(float) * 8, nullptr);
 
-	glEnableVertexAttribArray(1);
-	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(float) * 8, (void*)(sizeof(float) * 3));
-
 	glEnableVertexAttribArray(2);
-	glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, sizeof(float) * 8, (void*)(sizeof(float) * 6));
+	glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, sizeof(float) * 8, (void*)(sizeof(float) * 3));
+
+	glEnableVertexAttribArray(1);
+	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, sizeof(float) * 8, (void*)(sizeof(float) * 6));
 
 	//This will be needed later to specify how much we need to draw. Look at the main loop to find this variable again.
 	size = vertices.size();
