@@ -31,6 +31,7 @@
 using namespace std;
 
 //Methods
+void DrawElements(vector<glm::vec3> elements, unsigned int texture, GLuint VAO, float scale, int vectorSize, Shader mainShader);
 GLuint LoadModel(const std::string path, const std::string file, int& size);
 void mouse_callback(GLFWwindow* window, double xpos, double ypos);
 unsigned int initializeTexture(string path);
@@ -157,46 +158,16 @@ int main() {
 		ourShader.setMat4("view", view);
 		
 		//Draw walls && bind texture
-		glActiveTexture(GL_TEXTURE0);
-		glBindTexture(GL_TEXTURE_2D, wallTexture);
-		glBindVertexArray(wallVAO);
-
-		for (unsigned int i = 0; i < level.size(); i++)
-		{
-			// calculate the model matrix for each object and pass it to shader before drawing
-			glm::mat4 model = glm::mat4(1.0f);
-			model = glm::translate(model, level[i]);
-			ourShader.setMat4("model", model);
-			glDrawArrays(GL_TRIANGLES, 0, 36);
-		}
+		DrawElements(level, wallTexture, wallVAO, 1.0f , 36, ourShader);
 		
 		//Draw pellets && bind texture
-		glActiveTexture(GL_TEXTURE0);
-		glBindTexture(GL_TEXTURE_2D, pelletTexture);
-		glBindVertexArray(pelletVAO);
+		DrawElements(pellets, pelletTexture, pelletVAO, 0.3f, pelletSize, ourShader);
 
-		for (unsigned int i = 0; i < pellets.size(); i++)
-		{
-			// calculate the model matrix for each object and pass it to shader before drawing
-			glm::mat4 model = glm::mat4(1.0f);
-			model = glm::translate(model, pellets[i]);
-			model = glm::scale(model, glm::vec3(0.3, 0.3, 0.3));
-			ourShader.setMat4("model", model);
-			glDrawArrays(GL_TRIANGLES, 0, pelletSize);	
+		vector<glm::vec3> ghostPos;
+		for (int i = 0; i < 4; i++) {
+			ghostPos.push_back(ghosts[i]->getPosition());
 		}
-
-		//Draw ghosts && bind texture
-		glActiveTexture(GL_TEXTURE0);
-		glBindTexture(GL_TEXTURE_2D, ghostTexture);
-		glBindVertexArray(ghostVAO);
-		for (int i=0; i<ghosts.size(); i++){
-			glm::mat4 model = glm::mat4(1.0f);
-			glm::vec3 pos = ghosts[i]->getPosition();
-			model = glm::translate(model, pos);
-			model = glm::scale(model, glm::vec3(0.75, 0.75, 0.75));
-			ourShader.setMat4("model", model);
-			glDrawArrays(GL_TRIANGLES, 6, ghostSize);
-		}
+		DrawElements(ghostPos, ghostTexture, ghostVAO, 0.75f, ghostSize, ourShader);
 
 		glfwSwapBuffers(window);
 		glfwPollEvents();
@@ -205,6 +176,19 @@ int main() {
 	//Termination of Stuff 
 	//TODO::cleanVAO(); on all vaos
 	glfwTerminate();
+}
+
+void DrawElements(vector<glm::vec3> elements, unsigned int texture, GLuint VAO, float scale, int vectorSize, Shader mainShader) {
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(GL_TEXTURE_2D, texture);
+	glBindVertexArray(VAO);
+	for (int i = 0; i < elements.size(); i++) {
+		glm::mat4 model = glm::mat4(1.0f);
+		model = glm::translate(model, elements[i]);
+		model = glm::scale(model, glm::vec3(scale, scale, scale));
+		mainShader.setMat4("model", model);
+		glDrawArrays(GL_TRIANGLES, 0, vectorSize);
+	}
 }
 
 /// <summary>
