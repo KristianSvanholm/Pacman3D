@@ -28,31 +28,17 @@
 //Custom
 #include "ghost.h";
 
-
 using namespace std;
 
-
-
-//------------------------------------------------------------------------------
-// VERTEX STRUCT
-//------------------------------------------------------------------------------
-struct Vertex
-{
-	glm::vec3 location;
-	glm::vec3 normals;
-	glm::vec2 texCoords;
-};
-
-GLuint LoadModel(const std::string path, const std::string file, int& size);
-
 //Methods
-unsigned int initializeTexture(string path);
-GLuint wallSegment();
+GLuint LoadModel(const std::string path, const std::string file, int& size);
 void mouse_callback(GLFWwindow* window, double xpos, double ypos);
+unsigned int initializeTexture(string path);
 void processInput(GLFWwindow* window);
-void readLevel(string path);
 void movePlayer(glm::vec3 input);
 bool collides(glm::vec3 pos);
+void readLevel(string path);
+GLuint wallSegment();
 int initialize();
 //------
 
@@ -71,7 +57,6 @@ bool gameOver = false;
 //Screen
 const float WIDTH = 1000;
 const float HEIGHT = 800;
-const float ASPECT = WIDTH / HEIGHT;   // desired aspect ratio
 GLFWwindow* window;
 //-----
 
@@ -89,6 +74,7 @@ int main() {
 
 	readLevel("../../../levels/level0");
 
+	//initalizes all the libraries used
 	if (initialize() == EXIT_FAILURE) {
 		return EXIT_FAILURE;
 	}
@@ -104,12 +90,10 @@ int main() {
 	unsigned int pelletTexture = initializeTexture("../../../../resources/textures/yellow.jpg");
 	unsigned int ghostTexture = initializeTexture("../../../../resources/textures/tex.jpg");
 
+	//Loads in and creates VAO for all models
 	GLuint wallVAO = wallSegment();
-
-	int pelletSize = 0;
+	int pelletSize = 0, ghostSize = 0;
 	GLuint pelletVAO = LoadModel("../../../resources/model/pellets/", "globe-sphere.obj", pelletSize);
-
-	int ghostSize = 0;
 	GLuint ghostVAO = LoadModel("../../../resources/model/ghost/","pacman-ghosts.obj", ghostSize);
 
 	// tell opengl for each sampler to which texture unit it belongs to (only has to be done once)
@@ -185,7 +169,6 @@ int main() {
 			ourShader.setMat4("model", model);
 			glDrawArrays(GL_TRIANGLES, 0, 36);
 		}
-		
 		
 		//Draw pellets && bind texture
 		glActiveTexture(GL_TEXTURE0);
@@ -298,7 +281,10 @@ unsigned int initializeTexture(string path) {
 	return texture;
 }
 
-//TODO:: Replace with a key callback
+/// <summary>
+/// Takes in all legal input from player and handles it.
+/// </summary>
+/// <param name="window">Window to get input data from</param>
 void processInput(GLFWwindow* window)
 {
 	//Close window
@@ -312,7 +298,7 @@ void processInput(GLFWwindow* window)
 	float cameraSpeed = 2.5f * deltaTime;	
 
 	//Input handler
-	if (!win && !gameOver) {
+	if (!win && !gameOver) { //if game not done
 		if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS) {
 			movePlayer(move * cameraSpeed);
 		}
@@ -328,23 +314,33 @@ void processInput(GLFWwindow* window)
 	}
 }
 
+/// <summary>
+/// Checks and applies input to player if possible
+/// </summary>
+/// <param name="input">New input from player controller</param>
 void movePlayer(glm::vec3 input) {
 	glm::vec3 test = cameraPos;
 
 	//x
 	test.x += input.x;
 	test.z = cameraPos.z;
-	if (!collides(test)) {
+	if (!collides(test)) { //If no collision, apply x movement
 		cameraPos.x = test.x;
 	}
 	//z
 	test.x = cameraPos.x;
 	test.z += input.z;
-	if (!collides(test)) {
+	if (!collides(test)) { //if no collision, apply y movement
 		cameraPos.z = test.z;
 	}
 }
 
+/// <summary>
+/// Checks a new position against all wall segments
+/// Returns true if collision, false if no collision
+/// </summary>
+/// <param name="pos">Proposed new position</param>
+/// <returns>If that position collides or not</returns>
 bool collides(glm::vec3 pos) {
 	bool xColl, zColl;
 	float size = 0.75;
@@ -352,11 +348,11 @@ bool collides(glm::vec3 pos) {
 	for (int i = 0; i < level.size(); i++) {
 		glm::vec3 wall = level[i];
 
-		xColl = wall.x + size >= pos.x && wall.x - size <= pos.x;
-		zColl = wall.z + size >= pos.z && wall.z - size <= pos.z;
+		xColl = wall.x + size >= pos.x && wall.x - size <= pos.x; //X-axis overlap
+		zColl = wall.z + size >= pos.z && wall.z - size <= pos.z; //Y-axis overlap
 
-		if (xColl && zColl) {
-			return xColl && zColl;
+		if (xColl && zColl) { // both overlap :: collision
+			return true;
 		}
 	}
 	return false;
@@ -444,19 +440,15 @@ void readLevel(string path) {
 			cout << endl;
 		}
 
-		//TODO:: REWRITE THIS
 		//Generate ghost position
 		//RNG seeded by current time in seconds since January 1st, 1970
 		srand(time(NULL));
 		for (int i = 0; i < 4; i++) {
-			srand(rand());
-			int randX, randY;
-			do {
-				randX = rand() % (xMax - 1);
-				randY = rand() % (yMax - 1);
-			} while (ghostLvl[randX][randY] != 1); // checks for tunnel
-			//TODO Instantiate new ghost(s?) at given position(s?)
-			ghosts.push_back(new Ghost(ghostLvl, randY, randX));
+			//Pellets contain all walkable space in map so a random pick from pellets will give a valid location
+			glm::vec3 pos = pellets[rand() % pellets.size()];
+			ghosts.push_back(new Ghost(ghostLvl, pos.z, pos.x));
+			
+			srand(rand()); //reseed rng
 		}
 	}
 	else {
@@ -465,6 +457,10 @@ void readLevel(string path) {
 	lvlFile.close();
 }
 
+/// <summary>
+/// VAO for wall segments of the map
+/// </summary>
+/// <returns>New VAO</returns>
 GLuint wallSegment() {
 	float vertices[] = {
 		-0.5f, -0.5f, -0.5f,  0.0f, 0.0f,
@@ -516,6 +512,21 @@ GLuint wallSegment() {
 	return VAO;
 }
 
+//Data structure used in the following function
+struct Vertex
+{
+	glm::vec3 location;
+	glm::vec3 normals;
+	glm::vec2 texCoords;
+};
+
+/// <summary>
+/// Loads 3D model from path
+/// </summary>
+/// <param name="path">Path to look</param>
+/// <param name="file">Which obj file to get</param>
+/// <param name="size">Size callback variable</param>
+/// <returns>Newly generated VAO for model</returns>
 GLuint LoadModel(const std::string path, const std::string file, int& size)
 {
 	//We create a vector of Vertex structs. OpenGL can understand these, and so will accept them as input.
