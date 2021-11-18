@@ -25,41 +25,27 @@
 #define TINYOBJLOADER_IMPLEMENTATION
 #include "tinyobjloader/tiny_obj_loader.h"
 
-//Custom
+//Custom headers
 #include "ghost.h";
-
 
 using namespace std;
 
-
-
-//------------------------------------------------------------------------------
-// VERTEX STRUCT
-//------------------------------------------------------------------------------
-struct Vertex
-{
-	glm::vec3 location;
-	glm::vec3 normals;
-	glm::vec2 texCoords;
-};
-
-GLuint LoadModel(const std::string path, const std::string file, int& size);
-
 //Methods
-unsigned int initializeTexture(string path);
+GLuint LoadModel(const std::string path, const std::string file, int& size);
 GLuint wallSegment();
-GLuint pellet();
+
+unsigned int initializeTexture(string path);
 void mouse_callback(GLFWwindow* window, double xpos, double ypos);
 void processInput(GLFWwindow* window);
-void readLevel(string path);
 void movePlayer(glm::vec3 input);
 bool collides(glm::vec3 pos);
+bool readLevel(string path);
 int initialize();
 //------
 
 //Game variables
-vector<glm::vec3> level;
 vector<glm::vec3> pellets;
+vector<glm::vec3> level;
 vector<vector<int>> ghostLvl;
 vector<Ghost*> ghosts;
 
@@ -88,7 +74,10 @@ bool firstMouse = true;
 
 int main() {
 
-	readLevel("../../../levels/level0");
+	if (!readLevel("../../../levels/level0")) {
+		return EXIT_FAILURE;
+	}
+	
 
 	if (initialize() == EXIT_FAILURE) {
 		return EXIT_FAILURE;
@@ -133,35 +122,41 @@ int main() {
 		deltaTime = currentFrame - lastFrame;
 		lastFrame = currentFrame;
 
-		//PELLETS
-		for (int i = 0; i < pellets.size(); i++) {
-			//If pellets withing pickup range of player: remove it from vector
-			if (glm::distance(pellets[i], cameraPos) < 0.5f) {
-				pellets.erase(pellets.begin()+i);
-			}
-		}
-		if (pellets.size() == 0) { //win condition
-			win = true;
-		}
+		if (!gameOver && !win) { // no use calculating all this if game is lost
 
-		for (int i = 0; i < ghosts.size(); i++) {
-			//If pellets withing pickup range of player: remove it from vector
-			if (glm::distance(ghosts[i]->getPosition(), cameraPos) < 1.0f) {
-				gameOver = true;
+			//PELLET COLLISSION
+			for (int i = 0; i < pellets.size(); i++) {
+				//If pellets withing pickup range of player: remove it from vector
+				if (glm::distance(pellets[i], cameraPos) < 0.5f) {
+					pellets.erase(pellets.begin() + i);
+				}
+			}
+			if (pellets.size() == 0) { //win condition
+				win = true;
+				cout << "You win!" << endl;
+			}
+
+			//GHOST COLLISION
+			for (int i = 0; i < ghosts.size(); i++) {
+				if (glm::distance(ghosts[i]->getPosition(), cameraPos) < 1.0f) { // lose condition
+					gameOver = true;
+					cout << "GAME OVER" << endl;
+				}
+			}
+
+			//Ghost movement
+			for (int i = 0; i < ghosts.size(); i++) {
+				ghosts[i]->updateGhost(0, deltaTime);
 			}
 		}
 
 		//userInput
 		processInput(window);
 
-		//Ghost
-		for (int i = 0; i < ghosts.size(); i++) {
-			ghosts[i]->updateGhost(0, deltaTime);
-		}
-
 		//Draw everything \/\/\/
 		glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+		glActiveTexture(GL_TEXTURE0);
 
 		// activate shader
 		ourShader.use();
@@ -181,10 +176,8 @@ int main() {
 		ourShader.setVec3("CameraPosition", cameraPos);
 		
 		//Draw walls && bind texture
-		glActiveTexture(GL_TEXTURE0);
 		glBindTexture(GL_TEXTURE_2D, wallTexture);
 		glBindVertexArray(wallVAO);
-
 		for (unsigned int i = 0; i < level.size(); i++)
 		{
 			// calculate the model matrix for each object and pass it to shader before drawing
@@ -194,12 +187,9 @@ int main() {
 			glDrawArrays(GL_TRIANGLES, 0, 36);
 		}
 		
-		
 		//Draw pellets && bind texture
-		glActiveTexture(GL_TEXTURE0);
 		glBindTexture(GL_TEXTURE_2D, pelletTexture);
 		glBindVertexArray(pelletVAO);
-
 		for (unsigned int i = 0; i < pellets.size(); i++)
 		{
 			// calculate the model matrix for each object and pass it to shader before drawing
@@ -211,10 +201,10 @@ int main() {
 		}
 
 		//Draw ghosts && bind texture
-		glActiveTexture(GL_TEXTURE0);
 		glBindTexture(GL_TEXTURE_2D, ghostTexture);
 		glBindVertexArray(ghostVAO);
 		for (int i=0; i<ghosts.size(); i++){
+			// calculate the model matrix for each object and pass it to shader before drawing
 			glm::mat4 model = glm::mat4(1.0f);
 			glm::vec3 pos = ghosts[i]->getPosition();
 			model = glm::translate(model, pos);
@@ -306,7 +296,11 @@ unsigned int initializeTexture(string path) {
 	return texture;
 }
 
-//TODO:: Replace with a key callback
+/// <summary>
+/// Takes userinput for movement withing the game
+/// Also handles exit command
+/// </summary>
+/// <param name="window">Current open window receiving inputs</param>
 void processInput(GLFWwindow* window)
 {
 	//Close window
@@ -320,7 +314,7 @@ void processInput(GLFWwindow* window)
 	float cameraSpeed = 2.5f * deltaTime;	
 
 	//Input handler
-	if (!win && !gameOver) {
+	if (!win && !gameOver) { //If game not over, move
 		if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS) {
 			movePlayer(move * cameraSpeed);
 		}
@@ -336,35 +330,49 @@ void processInput(GLFWwindow* window)
 	}
 }
 
+/// <summary>
+/// Moves the player given no collisions per axis
+/// </summary>
+/// <param name="input"></param>
 void movePlayer(glm::vec3 input) {
 	glm::vec3 test = cameraPos;
 
 	//x
 	test.x += input.x;
 	test.z = cameraPos.z;
-	if (!collides(test)) {
+	if (!collides(test)) { //If no x collision, apply x movement
 		cameraPos.x = test.x;
 	}
 	//z
 	test.x = cameraPos.x;
 	test.z += input.z;
-	if (!collides(test)) {
+	if (!collides(test)) { //If no y collision, apply y movement
 		cameraPos.z = test.z;
 	}
 }
 
+/// <summary>
+/// Checks a position for collisions against the maps layout
+/// </summary>
+/// <param name="pos">Position to be checked</param>
+/// <returns>True for collisions, false for no collisions</returns>
 bool collides(glm::vec3 pos) {
+	float time  = glfwGetTime();
 	bool xColl, zColl;
 	float size = 0.75;
 
+	// Checks new position against all walls.
+	// NOTE: I tested not calculating collisions against walls not in the vicinity of the player,
+	// but it turned out adding a distance calculation for all wallsegments was 9 times slower
+	// than just calculating the collision for all of them regardless the distance from player
 	for (int i = 0; i < level.size(); i++) {
 		glm::vec3 wall = level[i];
 
-		xColl = wall.x + size >= pos.x && wall.x - size <= pos.x;
-		zColl = wall.z + size >= pos.z && wall.z - size <= pos.z;
+		xColl = wall.x + size >= pos.x && wall.x - size <= pos.x; //Overlap in x axis
+		zColl = wall.z + size >= pos.z && wall.z - size <= pos.z; //Overlap in y axis
 
-		if (xColl && zColl) {
-			return xColl && zColl;
+		if (xColl && zColl) { //If both there is an overlap of collision boxes
+			return true;
 		}
 	}
 	return false;
@@ -414,7 +422,12 @@ int initialize() {
 	return 0;
 }
 
-void readLevel(string path) {
+/// <summary>
+///  Reads level from path and spawns in ghosts at random positions
+/// </summary>
+/// <param name="path">Path to level file</param>
+/// <returns>true if successfully reading from file</returns>
+bool readLevel(string path) {
 	ifstream lvlFile(path);
 	if (lvlFile)
 	{
@@ -452,27 +465,34 @@ void readLevel(string path) {
 			cout << endl;
 		}
 
-		//TODO:: REWRITE THIS
 		//Generate ghost position
 		//RNG seeded by current time in seconds since January 1st, 1970
 		srand(time(NULL));
+		int randX, randY;
+		//Spawn 4 ghosts
 		for (int i = 0; i < 4; i++) {
-			srand(rand());
-			int randX, randY;
+			srand(rand()); // Creates new rng seed based on previous one for new spawn location
 			do {
 				randX = rand() % (xMax - 1);
 				randY = rand() % (yMax - 1);
 			} while (ghostLvl[randX][randY] != 1); // checks for tunnel
-			//TODO Instantiate new ghost(s?) at given position(s?)
 			ghosts.push_back(new Ghost(ghostLvl, randY, randX));
 		}
 	}
 	else {
-		cout << "\n --Unable to read file " << path;
+		cout << "\n -- Unable to read file from " << path << " --";
+		return false;
 	}
+
 	lvlFile.close();
+	cout << "\n -- Loaded in level from " << path << " --" << endl;
+	return true;
 }
 
+/// <summary>
+/// Creates VAO for the wall segments of our map.
+/// </summary>
+/// <returns> Returns the new VAO </returns>
 GLuint wallSegment() {
 	float vertices[] = {
 		-0.5f, -0.5f, -0.5f,  0.0f, 0.0f, 0.0f,  0.0f, -1.0f,
@@ -527,6 +547,20 @@ GLuint wallSegment() {
 	return VAO;
 }
 
+struct Vertex
+{
+	glm::vec3 location;
+	glm::vec3 normals;
+	glm::vec2 texCoords;
+};
+
+/// <summary>
+///  Loads in .obj model using tinyObjLoader
+/// </summary>
+/// <param name="path">Path to mtl and obj file</param>
+/// <param name="file">Which .obj file we want</param>
+/// <param name="size">Callback variable for how many vertices in model</param>
+/// <returns>VAO of the model</returns>
 GLuint LoadModel(const std::string path, const std::string file, int& size)
 {
 	//We create a vector of Vertex structs. OpenGL can understand these, and so will accept them as input.
@@ -535,13 +569,12 @@ GLuint LoadModel(const std::string path, const std::string file, int& size)
 	//Some variables that we are going to use to store data from tinyObj
 	tinyobj::attrib_t attrib;
 	vector<tinyobj::shape_t> shapes;
-	vector<tinyobj::material_t> materials; //This one goes unused for now, seeing as we don't need materials for this model.
+	vector<tinyobj::material_t> materials;
 
 	//Some variables incase there is something wrong with our obj file
 	string warn;
 	string err;
 
-	//We use tinobj to load our models. Feel free to find other .obj files and see if you can load them.
 	tinyobj::LoadObj(&attrib, &shapes, &materials, &warn, &err, (path+file).c_str(), (path).c_str());
 
 	if (!warn.empty()) {
@@ -569,7 +602,7 @@ GLuint LoadModel(const std::string path, const std::string file, int& size)
 				attrib.normals[(meshIndex.normal_index * 3) + 1],
 				attrib.normals[(meshIndex.normal_index * 3) + 2]
 			};
-			glm::vec2 textureCoordinate = {                         //These go unnused, but if you want textures, you will need them.
+			glm::vec2 textureCoordinate = {
 				attrib.texcoords[meshIndex.texcoord_index * 2],
 				attrib.texcoords[(meshIndex.texcoord_index * 2) + 1]
 			};
@@ -587,7 +620,6 @@ GLuint LoadModel(const std::string path, const std::string file, int& size)
 	glGenBuffers(1, &VBO);
 	glBindBuffer(GL_ARRAY_BUFFER, VBO);
 
-	//As you can see, OpenGL will accept a vector of structs as a valid input here
 	glBufferData(GL_ARRAY_BUFFER, sizeof(Vertex) * vertices.size(), &vertices[0], GL_STATIC_DRAW);
 
 	glEnableVertexAttribArray(0);
