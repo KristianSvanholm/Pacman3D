@@ -4,9 +4,14 @@
 #include "glm/glm/glm.hpp"
 
 using namespace std;
-vector<vector<int>> level;
 extern bool gameOver;
 
+/// <summary>
+/// Ghost constructor
+/// </summary>
+/// <param name="_level">Level data</param>
+/// <param name="_x">x position</param>
+/// <param name="_y">y position</param>
 Ghost::Ghost(std::vector<std::vector<int>> _level, int _x, int _y)
 {
 	prevGridPosition = gridPosition = glm::vec3(_x, -0.65, _y);
@@ -28,6 +33,12 @@ int Ghost::newDirection() {
 	else if (checkDir(0, -1)) { return 3; }
 }
 
+/// <summary>
+///  Checks if a position is within a tunnel or not
+/// </summary>
+/// <param name="dirx">check in this direction if 1 or -1</param>
+/// <param name="diry">check in this direction if 1 or -1</param>
+/// <returns>true if new position is legal</returns>
 bool Ghost::checkDir(int dirx, int diry) {
 	//Checks if new position is valid or not
 	int _x = gridPosition.x + dirx;
@@ -48,7 +59,7 @@ bool Ghost::checkDir(int dirx, int diry) {
 /// performs that choice by moving to that location
 /// </summary>
 /// <param name="time">Update the ghosts own time keeping</param>
-void Ghost::move(float time) {
+void Ghost::move() {
 	transform = true;
 
 	int options[4] = { 0,0,0,0 };
@@ -108,19 +119,14 @@ void Ghost::move(float time) {
 
 	gridPosition.x += dir.x;
 	gridPosition.z += dir.y;
-
-	//cout << gridPosition.x << " - " << gridPosition.z << endl;
-	//level[gridPosition.x][gridPosition.z] = 3;
-
-	lastTime = time;
 }
 
-void Ghost::updateGhost(float time, float dt) {
+void Ghost::updateGhost(float dt) {
 	if (transform) {
 		lerp(dt);
 	}
 	else {
-		move(time);
+		move();
 	}
 }
 
@@ -129,27 +135,14 @@ glm::vec3 Ghost::getPosition() {
 }
 
 void Ghost::lerp(float dt) {
-	//float offset = -0.725f;
-	float offset = 0;
 	linTime += dt*1;
 	if (linTime <= 1) {
 		float linx = ((float)prevGridPosition.x * (1.0 - linTime)) + ((float)gridPosition.x * linTime);
-		float liny = offset+((float)prevGridPosition.z * (1.0 - linTime)) + ((float)gridPosition.z * linTime);
+		float liny = ((float)prevGridPosition.z * (1.0 - linTime)) + ((float)gridPosition.z * linTime);
 		exactPosition = glm::vec3(liny, gridPosition.y, linx);
 	}
 	else {
-		//printMap();
 		linTime = 0;
 		transform = false;
-	}
-}
-
-void Ghost::printMap() {
-	system("CLS");
-	for (int i = 0; i < level[1].size(); i++) {
-		for (int j = 0; j < level.size(); j++) {
-			cout << level[j][i] << " ";
-		}
-		cout << endl;
 	}
 }
