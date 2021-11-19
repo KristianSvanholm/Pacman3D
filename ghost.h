@@ -27,8 +27,7 @@ private:
     void move();
 public:
     Ghost(std::vector<std::vector<int>> _level, int _x, int _y);
-    void updateGhost(float dt);
-    glm::vec3 getPosition();
+    glm::vec3 updateGhost(float dt);
 };
 
 #endif

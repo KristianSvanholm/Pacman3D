@@ -31,6 +31,7 @@ vector<glm::vec3> level;
 vector<glm::vec3> pellets;
 vector<vector<int>> ghostLvl;
 vector<Ghost*> ghosts;
+vector<glm::vec3> ghostPos;
 Player* player;
 
 //Game logic variables
@@ -79,6 +80,7 @@ int main() {
 	glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 	glfwSetCursorPosCallback(window, mouseCallback);
 
+	for (int i = 0; i < 4; i++) { ghostPos.push_back(glm::vec3(0, 0, 0)); } // Initialize ghost position vector
 	//Main game loop
 	while(!glfwWindowShouldClose(window)){
 
@@ -103,17 +105,9 @@ int main() {
 		}
 
 		//ghost logic
-		vector<glm::vec3> ghostPos;
 		for (int i = 0; i < ghosts.size(); i++) {
-			//If pellets withing pickup range of player: remove it from vector
-			if (glm::distance(ghosts[i]->getPosition(), player->getPosition()) < 1.0f) {
-				gameOver = true;
-			}
-			//generate new position array for drawElements function
-			ghostPos.push_back(ghosts[i]->getPosition());
-		}
-		for (int i = 0; i < ghosts.size(); i++) {
-			ghosts[i]->updateGhost(deltaTime);
+			ghostPos[i] = ghosts[i]->updateGhost(deltaTime); //update ghosts Position and return it to position-array
+			if (glm::distance(ghostPos[i], player->getPosition()) < 1.0f) {gameOver = true;} //If current ghost within range of player, Game Over!
 		}
 
 		//userInput

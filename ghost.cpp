@@ -54,7 +54,6 @@ bool Ghost::checkDir(int dirx, int diry) {
 /// chooses one of all available
 /// performs that choice by moving to that location
 /// </summary>
-/// <param name="time">Update the ghosts own time keeping</param>
 void Ghost::move() {
 	transform = true;
 
@@ -117,19 +116,25 @@ void Ghost::move() {
 	gridPosition.z += dir.y;
 }
 
-void Ghost::updateGhost(float dt) {
+/// <summary>
+/// Either applies movement decided by AI or calls AI to define said movement for next frame
+/// </summary>
+/// <param name="dt"> Time since last frame for consistent speed</param>
+/// <returns>Returns current exact position</returns>
+glm::vec3 Ghost::updateGhost(float dt) {
 	if (transform) {
 		lerp(dt);
 	}
 	else {
 		move();
 	}
-}
-
-glm::vec3 Ghost::getPosition() {
 	return exactPosition;
 }
 
+/// <summary>
+/// Lerp from previous position to new position
+/// </summary>
+/// <param name="dt"> Time since last frame for consistent speed</param>
 void Ghost::lerp(float dt) {
 	linTime += dt*1;
 	if (linTime <= 1) {
