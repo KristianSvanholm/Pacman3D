@@ -53,9 +53,6 @@ int main() {
 		return EXIT_FAILURE;
 	}
 
-	// configure global opengl state
-	glEnable(GL_DEPTH_TEST);
-
 	// build and compile our shader program
 	Shader ourShader("../../../shaders/7.1.camera.vs", "../../../shaders/7.1.camera.frag");
 
@@ -65,8 +62,8 @@ int main() {
 	unsigned int ghostTexture = initializeTexture("../../../../resources/textures/tex.jpg");
 
 	//Loads in and creates VAO for all models
-	GLuint wallVAO = wallSegment();
 	int pelletSize = 0, ghostSize = 0;
+	GLuint wallVAO = wallSegment();
 	GLuint pelletVAO = LoadModel("../../../resources/model/pellets/", "globe-sphere.obj", pelletSize);
 	GLuint ghostVAO = LoadModel("../../../resources/model/ghost/","pacman-ghosts.obj", ghostSize);
 
@@ -106,11 +103,14 @@ int main() {
 		}
 
 		//ghost logic
+		vector<glm::vec3> ghostPos;
 		for (int i = 0; i < ghosts.size(); i++) {
 			//If pellets withing pickup range of player: remove it from vector
 			if (glm::distance(ghosts[i]->getPosition(), player->getPosition()) < 1.0f) {
 				gameOver = true;
 			}
+			//generate new position array for drawElements function
+			ghostPos.push_back(ghosts[i]->getPosition());
 		}
 		for (int i = 0; i < ghosts.size(); i++) {
 			ghosts[i]->updateGhost(deltaTime);
@@ -129,9 +129,6 @@ int main() {
 		ourShader.use();
 		ourShader.setMat4("view", player->generateView());
 		
-		//Generate new position vector for ghosts for compatibility with DrawElements
-		vector<glm::vec3> ghostPos;
-		for (int i = 0; i < 4; i++) {ghostPos.push_back(ghosts[i]->getPosition());}
 		//Draw walls, pellets and ghosts
 		DrawElements(level, wallTexture, wallVAO, 1.0f , 36, ourShader);
 		DrawElements(pellets, pelletTexture, pelletVAO, 0.3f, pelletSize, ourShader);
@@ -249,10 +246,17 @@ int initialize() {
 		return EXIT_FAILURE;
 	}
 
+	// configure global opengl state
+	glEnable(GL_DEPTH_TEST);
+
 	//Nothing went wrong
 	return 0;
 }
 
+/// <summary>
+/// Loads in a level from file and initializes Player and Ghosts
+/// </summary>
+/// <param name="path"></param>
 void readLevel(string path) {
 	ifstream lvlFile(path);
 	if (lvlFile)
@@ -298,7 +302,7 @@ void readLevel(string path) {
 			glm::vec3 pos = pellets[rand() % pellets.size()];
 			ghosts.push_back(new Ghost(ghostLvl, pos.z, pos.x));
 			
-			srand(rand()); //reseed rng
+			srand(rand()); //re-seed rng
 		}
 	}
 	else {

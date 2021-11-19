@@ -17,12 +17,14 @@ private:
 	float yaw = -90.0f;
 	float pitch, lastX, lastY;
 	bool firstMouse = true;
+
+	//functions
+	void movePlayer(glm::vec3 input);
+	bool collides(glm::vec3 pos);
 public:
 	Player(glm::vec3 pos, float _lastX, float _lastY);
 	void processInput(GLFWwindow* window, float deltaTime);
 	void mouseCallback(GLFWwindow* window, double xpos, double ypos);
-	void movePlayer(glm::vec3 input);
-	bool collides(glm::vec3 pos);
 	glm::mat4 Player::generateView();
 	glm::vec3 Player::getPosition();
 };

@@ -1,9 +1,5 @@
 #include"ghost.h"
-#include<vector>
-#include<iostream>
-#include "glm/glm/glm.hpp"
 
-using namespace std;
 extern bool gameOver;
 
 /// <summary>
