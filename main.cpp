@@ -39,6 +39,7 @@ void processInput(GLFWwindow* window);
 void movePlayer(glm::vec3 input);
 bool collides(glm::vec3 pos);
 void readLevel(string path);
+void CleanVAO(GLuint& vao);
 GLuint wallSegment();
 int initialize();
 //------
@@ -157,16 +158,12 @@ int main() {
 		}
 		ourShader.setMat4("view", view);
 		
-		//Draw walls && bind texture
-		DrawElements(level, wallTexture, wallVAO, 1.0f , 36, ourShader);
-		
-		//Draw pellets && bind texture
-		DrawElements(pellets, pelletTexture, pelletVAO, 0.3f, pelletSize, ourShader);
-
+		//Generate new position vector for ghosts for compatibility with DrawElements
 		vector<glm::vec3> ghostPos;
-		for (int i = 0; i < 4; i++) {
-			ghostPos.push_back(ghosts[i]->getPosition());
-		}
+		for (int i = 0; i < 4; i++) {ghostPos.push_back(ghosts[i]->getPosition());}
+		//Draw walls, pellets and ghosts
+		DrawElements(level, wallTexture, wallVAO, 1.0f , 36, ourShader);
+		DrawElements(pellets, pelletTexture, pelletVAO, 0.3f, pelletSize, ourShader);
 		DrawElements(ghostPos, ghostTexture, ghostVAO, 0.75f, ghostSize, ourShader);
 
 		glfwSwapBuffers(window);
@@ -174,7 +171,9 @@ int main() {
 	}
 
 	//Termination of Stuff 
-	//TODO::cleanVAO(); on all vaos
+	CleanVAO(ghostVAO);
+	CleanVAO(pelletVAO);
+	CleanVAO(wallVAO);
 	glfwTerminate();
 }
 
@@ -587,4 +586,39 @@ GLuint LoadModel(const std::string path, const std::string file, int& size)
 	size = vertices.size();
 
 	return VAO;
+}
+
+// -----------------------------------------------------------------------------
+// Clean VAO
+// -----------------------------------------------------------------------------
+void CleanVAO(GLuint& vao)
+{
+	GLint nAttr = 0;
+	std::set<GLuint> vbos;
+
+	GLint eboId;
+	glGetVertexArrayiv(vao, GL_ELEMENT_ARRAY_BUFFER_BINDING, &eboId);
+	glDeleteBuffers(1, (GLuint*)&eboId);
+
+	glGetIntegerv(GL_MAX_VERTEX_ATTRIBS, &nAttr);
+	glBindVertexArray(vao);
+
+	for (int iAttr = 0; iAttr < nAttr; ++iAttr)
+	{
+		GLint vboId = 0;
+		glGetVertexAttribiv(iAttr, GL_VERTEX_ATTRIB_ARRAY_BUFFER_BINDING, &vboId);
+		if (vboId > 0)
+		{
+			vbos.insert(vboId);
+		}
+
+		glDisableVertexAttribArray(iAttr);
+	}
+
+	for (auto vbo : vbos)
+	{
+		glDeleteBuffers(1, &vbo);
+	}
+
+	glDeleteVertexArrays(1, &vao);
 }
