@@ -73,11 +73,11 @@ int main() {
 	ourShader.setInt("texture", 0);
 
 	// set lightning data for the shader
-	ourShader.setVec3("light.Direction", -3.f, -1.f, -3.f);
+	ourShader.setVec3("light.Direction", -5.f, -3.f, -1.f);
 
-	ourShader.setVec3("light.ambient", 0.1f, 0.1f, 0.1f);
-	ourShader.setVec3("light.diffuse", 0.5f, 0.5f, 0.5f);
-	ourShader.setVec3("light.specular", 5.0f, 5.0f, 5.0f);
+	ourShader.setVec3("light.ambient", 10.f, 10.f, 10.f);
+	ourShader.setVec3("light.diffuse", 10.f, 10.f, 10.f);
+	ourShader.setVec3("light.specular", 15.0f, 15.0f, 15.0f);
 
 	// pass projection matrix to shader (as projection matrix rarely changes there's no need to do this per frame)
 	glm::mat4 projection = glm::perspective(glm::radians(45.0f), (float)WIDTH / (float)HEIGHT, 0.1f, 100.0f);
@@ -99,6 +99,9 @@ int main() {
 		float currentFrame = glfwGetTime();
 		deltaTime = currentFrame - lastFrame;
 		lastFrame = currentFrame;
+
+		//moving lights
+		ourShader.setVec3("light.Direction", -1.f * (cos(glfwGetTime())/2), -2 * abs(sin((glfwGetTime()/3))), -1.0f *(sin(glfwGetTime()/2 + 0.5)));
 
 		//pellet logic
 		for (int i = 0; i < pellets.size(); i++) {
