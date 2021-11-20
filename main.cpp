@@ -72,6 +72,13 @@ int main() {
 	ourShader.use();
 	ourShader.setInt("texture", 0);
 
+	// set lightning data for the shader
+	ourShader.setVec3("light.Direction", -3.f, -1.f, -3.f);
+
+	ourShader.setVec3("light.ambient", 0.1f, 0.1f, 0.1f);
+	ourShader.setVec3("light.diffuse", 0.5f, 0.5f, 0.5f);
+	ourShader.setVec3("light.specular", 5.0f, 5.0f, 5.0f);
+
 	// pass projection matrix to shader (as projection matrix rarely changes there's no need to do this per frame)
 	glm::mat4 projection = glm::perspective(glm::radians(45.0f), (float)WIDTH / (float)HEIGHT, 0.1f, 100.0f);
 	ourShader.setMat4("projection", projection);
@@ -122,6 +129,9 @@ int main() {
 		// activate shader and apply player view
 		ourShader.use();
 		ourShader.setMat4("view", player->generateView());
+
+		// give camera position for specular light calculation
+		ourShader.setVec3("CameraPosition", player->getPosition());
 		
 		//Draw walls, pellets and ghosts
 		DrawElements(level, wallTexture, wallVAO, 1.0f , 36, ourShader);
