@@ -8,8 +8,8 @@
 
 using namespace std;
 
-GLuint LoadModel(const string path, const string file, int& size);
-void CleanVAO(GLuint& vao);
+GLuint loadModel(const string path, const string file, int& size);
+void cleanVAO(GLuint& vao);
 GLuint wallSegment();
 
 //Data structure used in the following function
@@ -27,7 +27,7 @@ struct Vertex
 /// <param name="file">Which obj file to get</param>
 /// <param name="size">Size callback variable</param>
 /// <returns>Newly generated VAO for model</returns>
-GLuint LoadModel(const std::string path, const std::string file, int& size)
+GLuint loadModel(const std::string path, const std::string file, int& size)
 {
 	//We create a vector of Vertex structs. OpenGL can understand these, and so will accept them as input.
 	vector<Vertex> vertices;
@@ -109,7 +109,7 @@ GLuint LoadModel(const std::string path, const std::string file, int& size)
 /// Deletes data within VAO
 /// </summary>
 /// <param name="vao">VAO to be cleaned</param>
-void CleanVAO(GLuint& vao)
+void cleanVAO(GLuint& vao)
 {
 	GLint nAttr = 0;
 	std::set<GLuint> vbos;

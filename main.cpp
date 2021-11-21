@@ -21,7 +21,7 @@ using namespace std;
 
 //Methods
 unsigned int initializeTexture(string path);
-void DrawElements(vector<glm::vec3> elements, unsigned int texture, GLuint VAO, float scale, int vectorSize, Shader mainShader);
+void drawElements(vector<glm::vec3> elements, unsigned int texture, GLuint VAO, float scale, int vectorSize, Shader mainShader);
 void mouseCallback(GLFWwindow* window, double xpos, double ypos);
 void readLevel(string path);
 int initialize();
@@ -65,8 +65,8 @@ int main() {
 	//Loads in and creates VAO for all models
 	int pelletSize = 0, ghostSize = 0;
 	GLuint wallVAO = wallSegment();
-	GLuint pelletVAO = LoadModel("../../../resources/model/pellets/", "globe-sphere.obj", pelletSize);
-	GLuint ghostVAO = LoadModel("../../../resources/model/ghost/","pacman-ghosts.obj", ghostSize);
+	GLuint pelletVAO = loadModel("../../../resources/model/pellets/", "globe-sphere.obj", pelletSize);
+	GLuint ghostVAO = loadModel("../../../resources/model/ghost/","pacman-ghosts.obj", ghostSize);
 
 	// tell opengl for each sampler to which texture unit it belongs to (only has to be done once)
 	ourShader.use();
@@ -74,7 +74,6 @@ int main() {
 
 	// set lightning data for the shader
 	ourShader.setVec3("light.Direction", -5.f, -3.f, -1.f);
-
 	ourShader.setVec3("light.ambient", 1.f, 1.f, 1.f);
 	ourShader.setVec3("light.diffuse", 10.f, 10.f, 10.f);
 	ourShader.setVec3("light.specular", 15.0f, 15.0f, 15.0f);
@@ -106,9 +105,7 @@ int main() {
 		//pellet logic
 		for (int i = 0; i < pellets.size(); i++) {
 			//If pellets withing pickup range of player: remove it from vector
-			if (glm::distance(pellets[i], player->getPosition()) < 0.5f) {
-				pellets.erase(pellets.begin()+i);
-			}
+			if (glm::distance(pellets[i], player->getPosition()) < 0.5f) pellets.erase(pellets.begin()+i);
 		}
 		if (pellets.size() == 0) { //win condition
 			win = true;
@@ -117,7 +114,7 @@ int main() {
 		//ghost logic
 		for (int i = 0; i < ghosts.size(); i++) {
 			ghostPos[i] = ghosts[i]->updateGhost(deltaTime); //update ghosts Position and return it to position-array
-			if (glm::distance(ghostPos[i], player->getPosition()) < 1.0f) {gameOver = true;} //If current ghost within range of player, Game Over!
+			if (glm::distance(ghostPos[i], player->getPosition()) < 1.0f) gameOver = true; //If current ghost within range of player, Game Over!
 		}
 
 		//userInput
@@ -137,18 +134,18 @@ int main() {
 		ourShader.setVec3("CameraPosition", player->getPosition());
 		
 		//Draw walls, pellets and ghosts
-		DrawElements(level, wallTexture, wallVAO, 1.0f , 36, ourShader);
-		DrawElements(pellets, pelletTexture, pelletVAO, 0.3f, pelletSize, ourShader);
-		DrawElements(ghostPos, ghostTexture, ghostVAO, 0.75f, ghostSize, ourShader);
+		drawElements(level, wallTexture, wallVAO, 1.0f , 36, ourShader);
+		drawElements(pellets, pelletTexture, pelletVAO, 0.3f, pelletSize, ourShader);
+		drawElements(ghostPos, ghostTexture, ghostVAO, 0.75f, ghostSize, ourShader);
 
 		glfwSwapBuffers(window);
 		glfwPollEvents();
 	}
 
 	//Termination of Stuff 
-	CleanVAO(ghostVAO);
-	CleanVAO(pelletVAO);
-	CleanVAO(wallVAO);
+	cleanVAO(ghostVAO);
+	cleanVAO(pelletVAO);
+	cleanVAO(wallVAO);
 	glfwTerminate();
 }
 
@@ -161,7 +158,7 @@ int main() {
 /// <param name="scale">Scale to draw VAOs in</param>
 /// <param name="vectorSize">Number of vertices in VAO</param>
 /// <param name="mainShader">ShaderProgram</param>
-void DrawElements(vector<glm::vec3> elements, unsigned int texture, GLuint VAO, float scale, int vectorSize, Shader shader) {
+void drawElements(vector<glm::vec3> elements, unsigned int texture, GLuint VAO, float scale, int vectorSize, Shader shader) {
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D, texture);
 	glBindVertexArray(VAO);
@@ -273,32 +270,32 @@ void readLevel(string path) {
 		int xMax = stoi(size.substr(0, 2));
 		int yMax = stoi(size.substr(3));
 
+		//init 2D Vector
 		ghostLvl = vector<vector<int>>(xMax);
 		for (int i = 0; i < xMax; i++) {
 			ghostLvl[i] = vector<int>(yMax);
 		}
 
-		// Print current level
+		int data;
+
+		// read current level
 		cout << xMax << "*" << yMax << endl;
 		for (int i = 0; i < yMax; i++) {
 			for (int j = 0; j < xMax; j++) {
-				int data;
 				lvlFile >> data;
-				if (data == 1) {
-					level.push_back(glm::vec3(i, 0, j));
-					ghostLvl[j][i] = 1;
-				}
-				else if (data == 0) {
+				switch (data) {
+				case 0:
 					pellets.push_back(glm::vec3(i, -0.25, j));
-					ghostLvl[j][i] = 0;
+					break;
+				case 1:
+					level.push_back(glm::vec3(i, 0, j));
+					break;
+				case 2:
+					player = new Player(glm::vec3(i, 0, j), WIDTH / 2, HEIGHT / 2);
+					break;
 				}
-				else if (data == 2) {
-					ghostLvl[j][i] = 0;
-					player = new Player(glm::vec3(i, 0, j), WIDTH/2, HEIGHT/2);
-				}
-
+				ghostLvl[j][i] = (data == 1) ? 1 : 0; // Build level for ghost AI
 			}
-			cout << endl;
 		}
 
 		//Generate ghost position
