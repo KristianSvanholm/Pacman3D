@@ -41,8 +41,8 @@ bool win = false;
 bool gameOver = false;
 
 //Screen
-const float WIDTH = 1000;
-const float HEIGHT = 800;
+const float WIDTH = 1920;
+const float HEIGHT = 1080;
 GLFWwindow* window;
 
 int main() {
