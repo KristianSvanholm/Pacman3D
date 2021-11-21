@@ -75,7 +75,7 @@ int main() {
 	// set lightning data for the shader
 	ourShader.setVec3("light.Direction", -5.f, -3.f, -1.f);
 
-	ourShader.setVec3("light.ambient", 10.f, 10.f, 10.f);
+	ourShader.setVec3("light.ambient", 1.f, 1.f, 1.f);
 	ourShader.setVec3("light.diffuse", 10.f, 10.f, 10.f);
 	ourShader.setVec3("light.specular", 15.0f, 15.0f, 15.0f);
 
