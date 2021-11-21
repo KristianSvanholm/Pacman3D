@@ -100,7 +100,7 @@ int main() {
 		lastFrame = currentFrame;
 
 		//moving lights
-		ourShader.setVec3("light.Direction", -1.f * (cos(glfwGetTime())/2), -2 * abs(sin((glfwGetTime()/3))), -1.0f *(sin(glfwGetTime()/2 + 0.5)));
+		ourShader.setVec3("light.Direction", -1.f * (cos(currentFrame)/2), -2 * abs(sin((currentFrame/3))), -1.0f *(sin(currentFrame/2 + 0.5)));
 
 		//pellet logic
 		for (int i = 0; i < pellets.size(); i++) {
@@ -109,12 +109,16 @@ int main() {
 		}
 		if (pellets.size() == 0) { //win condition
 			win = true;
+			cout << "YOU WIN!" << endl;
 		}
 
 		//ghost logic
 		for (int i = 0; i < ghosts.size(); i++) {
 			ghostPos[i] = ghosts[i]->updateGhost(deltaTime); //update ghosts Position and return it to position-array
-			if (glm::distance(ghostPos[i], player->getPosition()) < 1.0f) gameOver = true; //If current ghost within range of player, Game Over!
+			if (glm::distance(ghostPos[i], player->getPosition()) < 1.0f) { //If current ghost within range of player, Game Over!
+				gameOver = true; 
+				cout << "YOU LOSE" << endl;
+			}
 		}
 
 		//userInput
