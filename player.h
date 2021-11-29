@@ -25,7 +25,7 @@ public:
 	Player(glm::vec3 pos, float _lastX, float _lastY);
 	void processInput(GLFWwindow* window, float deltaTime);
 	void mouseCallback(GLFWwindow* window, double xpos, double ypos);
-	glm::mat4 Player::generateView();
-	glm::vec3 Player::getPosition();
+	glm::mat4 generateView();
+	glm::vec3 getPosition();
 };
 #endif

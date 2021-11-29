@@ -47,7 +47,7 @@ GLFWwindow* window;
 
 int main() {
 
-	readLevel("../../../levels/level0");
+	readLevel("../levels/level0");
 
 	//initalizes all the libraries used
 	if (initialize() == EXIT_FAILURE) {
@@ -55,18 +55,18 @@ int main() {
 	}
 
 	// build and compile our shader program
-	Shader ourShader("../../../shaders/7.1.camera.vs", "../../../shaders/7.1.camera.frag");
+	Shader ourShader("../shaders/7.1.camera.vs", "../shaders/7.1.camera.frag");
 
 	// load and create a texture from path
-	unsigned int wallTexture = initializeTexture("../../../../resources/textures/wall.jpg");
-	unsigned int pelletTexture = initializeTexture("../../../../resources/textures/yellow.jpg");
-	unsigned int ghostTexture = initializeTexture("../../../../resources/textures/tex.jpg");
+	unsigned int wallTexture = initializeTexture("../resources/textures/wall.jpg");
+	unsigned int pelletTexture = initializeTexture("../resources/textures/yellow.jpg");
+	unsigned int ghostTexture = initializeTexture("../resources/textures/tex.jpg");
 
 	//Loads in and creates VAO for all models
 	int pelletSize = 0, ghostSize = 0;
 	GLuint wallVAO = wallSegment();
-	GLuint pelletVAO = loadModel("../../../resources/model/pellets/", "globe-sphere.obj", pelletSize);
-	GLuint ghostVAO = loadModel("../../../resources/model/ghost/","pacman-ghosts.obj", ghostSize);
+	GLuint pelletVAO = loadModel("../resources/model/pellets/", "globe-sphere.obj", pelletSize);
+	GLuint ghostVAO = loadModel("../resources/model/ghost/","pacman-ghosts.obj", ghostSize);
 
 	// tell opengl for each sampler to which texture unit it belongs to (only has to be done once)
 	ourShader.use();
@@ -200,7 +200,7 @@ unsigned int initializeTexture(string path) {
 	// load image, create texture and generate mipmaps
 	int width, height, nrChannels;
 	//stbi_set_flip_vertically_on_load(true); // tell stb_image.h to flip loaded texture's on the y-axis.
-	unsigned char* data = stbi_load(FileSystem::getPath(path).c_str(), &width, &height, &nrChannels, 0);
+	unsigned char* data = stbi_load(path.c_str(), &width, &height, &nrChannels, 0);
 	if (data)
 	{
 		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
