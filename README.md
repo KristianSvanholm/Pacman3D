@@ -22,4 +22,4 @@ File: main.cpp
 - There are a lot of functions in your main. It would have been good to try to
   pack them in classes to follow a full Object-oriented scheme
   
-My evaluation of this work is **C**.
+My evaluation of this work is **B**.
