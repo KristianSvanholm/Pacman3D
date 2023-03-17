@@ -1,7 +1,7 @@
 # Pacman3D
 
 The following is a group project from the course 'Prog2002 - Graphics programming' at NTNU Gjøvik we completed autumn '21.  
-It runs on openGL written in c++ and allows fetures fancy rotating lighting and textures.  
+It runs on OpenGL written in c++ and features fancy rotating lighting and textures.  
 
 ## How to play
 Navigate the maze with WASD to move and moving your mouse to look around and change directions.  
