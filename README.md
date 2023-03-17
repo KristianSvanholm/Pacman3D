@@ -3,6 +3,11 @@
 The following is a group project from the course 'Prog2002 - Graphics programming' at NTNU Gjøvik we completed autumn '21.  
 It runs on OpenGL written in c++ and features fancy rotating lighting and textures.  
 
+Group members
+* Vidar "Kongen" Stølsnes
+* [Benjamin Loxley Wood](https://github.com/SpectraGitHub)
+* [Kristan Røren Svanholm](https://github.com/KristianSvanholm)
+
 ## How to play
 Navigate the maze with WASD to move and moving your mouse to look around and change directions.  
 If you pick up all the pellets, you receive a win message in the terminal.  
